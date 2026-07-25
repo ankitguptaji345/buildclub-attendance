@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - Build Club Attendance</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <div class="brand">🏆 BUILD CLUB</div>
+    <a href="index.html">Home</a>
+    <a href="register.html">Register</a>
+    <a href="camera.html">Live Camera</a>
+    <a href="dashboard.html" class="active">Dashboard</a>
+  </nav>
+
+  <div class="container">
+    <h1>📊 Attendance Dashboard</h1>
+
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="num" id="statInside">-</div>
+        <div class="label">Inside Right Now</div>
+      </div>
+      <div class="stat-box">
+        <div class="num" id="statMembers">-</div>
+        <div class="label">Registered Members</div>
+      </div>
+      <div class="stat-box">
+        <div class="num" id="statVisits">-</div>
+        <div class="label">Total Visits Logged</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🕒 Total Hours per Member</h2>
+      <canvas id="hoursChart" height="110"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>🟢 Currently Inside</h2>
+      <table id="insideTable">
+        <thead><tr><th>Name</th><th>ID</th><th>Checked In At</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>📋 Attendance Log</h2>
+      <table id="logTable">
+        <thead><tr><th>Name</th><th>ID</th><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Hours</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="lib/chart.umd.js"></script>
+  <script defer src="js/dashboard.js"></script>
+</body>
+</html>

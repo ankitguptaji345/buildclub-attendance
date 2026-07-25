@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register - Build Club Attendance</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <div class="brand">🏆 BUILD CLUB</div>
+    <a href="index.html">Home</a>
+    <a href="register.html" class="active">Register</a>
+    <a href="camera.html">Live Camera</a>
+    <a href="dashboard.html">Dashboard</a>
+  </nav>
+
+  <div class="container">
+    <div class="card">
+      <h1>🪪 One-Time Face Registration</h1>
+      <p>Fill in your details, let the camera see your face clearly, then click <b>Capture My Face</b>.</p>
+
+      <label>Build Club ID</label>
+      <input type="text" id="buildClubId" placeholder="e.g. 101">
+
+      <label>Full Name</label>
+      <input type="text" id="name" placeholder="e.g. Rahul Sharma">
+
+      <div style="margin-top:16px;">
+        <div class="video-wrap">
+          <video id="video" autoplay muted playsinline width="480" height="360"></video>
+          <canvas id="overlay" width="480" height="360"></canvas>
+        </div>
+      </div>
+
+      <button id="captureBtn">📸 Capture My Face</button>
+      <div id="status" class="status"></div>
+    </div>
+  </div>
+
+  <script defer src="lib/face-api.min.js"></script>
+  <script defer src="js/register.js"></script>
+</body>
+</html>
