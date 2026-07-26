@@ -1,18 +1,46 @@
 // camera.js
 // This runs on the makerspace laptop all day. It watches the webcam,
 // compares every face it sees to the registered members, and automatically
-// logs check-in / check-out through the backend.
+// logs check-in / check-out through the backend - with a live pop-up + sound.
 
 const video = document.getElementById('video');
 const overlay = document.getElementById('overlay');
 const statusBox = document.getElementById('status');
+const videoWrap = document.querySelector('.video-wrap');
 
 let faceMatcher = null;
 const COOLDOWN_MS = 20000; // don't re-mark the same person within 20 seconds
 const lastMarked = {};     // { buildClubId: timestampOfLastMark }
+let soundOn = true;
+
+// ---------------- Live clock ----------------
+function updateClock() {
+  const el = document.getElementById('liveClock');
+  if (el) el.textContent = new Date().toLocaleTimeString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ---------------- Sound mute toggle ----------------
+const muteBtn = document.getElementById('muteBtn');
+muteBtn?.addEventListener('click', () => {
+  soundOn = !soundOn;
+  muteBtn.textContent = soundOn ? '🔊 Sound On' : '🔇 Sound Off';
+});
+
+// ---------------- Kiosk / fullscreen mode ----------------
+const kioskBtn = document.getElementById('kioskBtn');
+kioskBtn?.addEventListener('click', () => {
+  document.body.classList.toggle('kiosk-mode');
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+  } else {
+    document.exitFullscreen?.().catch(() => {});
+  }
+});
 
 function showStatus(message, type = 'info') {
-  statusBox.textContent = message;
+  statusBox.innerHTML = message;
   statusBox.className = `status show ${type}`;
 }
 
@@ -26,6 +54,7 @@ async function startWebcam() {
 }
 
 async function loadModels() {
+  showStatus('<span class="spinner"></span>Loading face recognition models...', 'info');
   const MODEL_URL = 'models';
   await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
   await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
@@ -35,7 +64,7 @@ async function loadModels() {
 // Loads every registered member from the backend and builds a "matcher"
 // that can quickly compare a new face to all known faces.
 async function loadKnownFaces() {
-  showStatus('⏳ Loading registered members...', 'info');
+  showStatus('<span class="spinner"></span>Loading registered members...', 'info');
   const res = await fetch('/api/members');
   const members = await res.json();
 
@@ -54,9 +83,10 @@ async function loadKnownFaces() {
   // 0.6 is the standard distance threshold recommended by face-api.js
   faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
   showStatus(`✅ Ready! Watching for ${members.length} registered member(s).`, 'ok');
+  videoWrap.classList.add('scanning');
 }
 
-async function markAttendance(name, buildClubId) {
+async function markAttendance(name, buildClubId, confidencePct) {
   const now = Date.now();
   if (lastMarked[buildClubId] && now - lastMarked[buildClubId] < COOLDOWN_MS) {
     return; // too soon, skip to avoid spamming the same check-in/out
@@ -70,9 +100,17 @@ async function markAttendance(name, buildClubId) {
       body: JSON.stringify({ buildClubId, name })
     });
     const data = await res.json();
-    showStatus(`👋 ${data.message}`, 'ok');
+
+    if (data.status === 'checked-in') {
+      showToast(`👋 Welcome, ${name}!`, `Match confidence: ${confidencePct}% · Checked in just now`, 'in');
+      if (soundOn) playBeep('in');
+    } else if (data.status === 'checked-out') {
+      showToast(`👋 Bye, ${name}!`, data.message.replace(`Bye ${name}! `, ''), 'out');
+      if (soundOn) playBeep('out');
+    }
+    // 'already-checked-in' -> stay quiet, no need to spam a toast
   } catch (err) {
-    showStatus('❌ Could not reach the server to mark attendance.', 'err');
+    showToast('⚠️ Connection issue', 'Could not reach the server to mark attendance.', 'warn');
   }
 }
 
@@ -98,9 +136,11 @@ async function detectLoop() {
 
       if (match.label !== 'unknown') {
         const [name, buildClubId] = match.label.split('|');
-        label = name;
+        // Turn the "distance" (lower = better match) into a friendly confidence %
+        const confidencePct = Math.max(0, Math.round((1 - match.distance) * 100));
+        label = `${name} (${confidencePct}%)`;
         boxColor = '#3FA34D';
-        markAttendance(name, buildClubId);
+        markAttendance(name, buildClubId, confidencePct);
       }
 
       const drawBox = new faceapi.draw.DrawBox(box, { label, boxColor });

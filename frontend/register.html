@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Register - Build Club Attendance</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -15,7 +16,16 @@
   </nav>
 
   <div class="container">
-    <div class="card">
+    <div class="card" id="lockCard">
+      <h1>🔒 Admin Access Required</h1>
+      <p>Registering a new face changes who the system trusts. Enter the team admin password to continue.</p>
+      <label>Admin Password</label>
+      <input type="text" id="adminPassword" placeholder="Ask a teammate if you don't know it" autocomplete="off">
+      <button id="unlockBtn">🔓 Unlock Registration</button>
+      <div id="lockStatus" class="status"></div>
+    </div>
+
+    <div class="card" id="formCard" style="display:none;">
       <h1>🪪 One-Time Face Registration</h1>
       <p>Fill in your details, let the camera see your face clearly, then click <b>Capture My Face</b>.</p>
 
@@ -37,7 +47,10 @@
     </div>
   </div>
 
+  <div id="toastContainer"></div>
+
   <script defer src="lib/face-api.min.js"></script>
+  <script defer src="js/toast.js"></script>
   <script defer src="js/register.js"></script>
 </body>
 </html>

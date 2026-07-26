@@ -4,12 +4,18 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const config = require('../config');
 
 // POST /api/members/register
 // Called ONE TIME per member, from the Registration page.
 // Saves their Build Club ID, Name, and their face "fingerprint" (descriptor).
+// Requires the admin password so random people can't register fake faces.
 router.post('/register', (req, res) => {
-  const { buildClubId, name, descriptor } = req.body;
+  const { buildClubId, name, descriptor, adminPassword } = req.body;
+
+  if (adminPassword !== config.ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Incorrect admin password.' });
+  }
 
   if (!buildClubId || !name || !descriptor) {
     return res.status(400).json({ error: 'buildClubId, name and descriptor are all required.' });

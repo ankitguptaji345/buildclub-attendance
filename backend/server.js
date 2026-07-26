@@ -9,6 +9,7 @@ const path = require('path');
 
 const membersRoutes = require('./routes/members');
 const attendanceRoutes = require('./routes/attendance');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = 3000;
@@ -22,6 +23,7 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 // Anything starting with /api/members or /api/attendance goes to our route files
 app.use('/api/members', membersRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/auth', authRoutes);
 
 app.listen(PORT, () => {
   console.log('====================================================');
@@ -29,3 +31,8 @@ app.listen(PORT, () => {
   console.log(`👉 Open this in your browser: http://localhost:${PORT}`);
   console.log('====================================================');
 });
+
+// Safety net: auto-close any attendance session someone forgot to check out of.
+// Runs once at startup, then every 15 minutes.
+attendanceRoutes.autoCloseStaleSessions();
+setInterval(() => attendanceRoutes.autoCloseStaleSessions(), 15 * 60 * 1000);
