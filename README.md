@@ -26,6 +26,18 @@ buildclub-attendance/
     └── models/ (face recognition model weights)
 ```
 
+## Setup - environment variables
+
+This project reads its database connection and admin password from
+environment variables (not hard-coded anymore). Before running locally:
+
+1. Copy `backend/.env.example` to `backend/.env`
+2. Fill in `DATABASE_URL` (your free Neon Postgres connection string) and
+   `ADMIN_PASSWORD` (your own secret)
+
+The same two values need to be set as Environment Variables in Render for
+the live deployed version. Full instructions are in the PDF guide.
+
 ## How to run (one click)
 
 - **Windows:** double-click `start.bat`
@@ -53,3 +65,12 @@ First time only, on Mac/Linux you may need to run `chmod +x start.sh` once.
 
 Full step-by-step setup, GitHub workflow, and deployment options are in the
 PDF and chat where this project was generated.
+
+## What changed for deployment (v2 backend)
+
+- 🌐 Database moved from a local SQLite file to **Neon Postgres** (free,
+  cloud-hosted, and doesn't get wiped when the free-tier server restarts)
+- 🔌 Server now listens on `process.env.PORT` instead of a hard-coded `3000`,
+  which free hosts like Render require
+- 🔑 Admin password is read from an environment variable everywhere - never
+  commit your real password into `config.js` in a public repo

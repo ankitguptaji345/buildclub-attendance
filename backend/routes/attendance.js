@@ -4,7 +4,7 @@
 
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const { pool } = require('../db');
 
 function todayString() {
   return new Date().toISOString().slice(0, 10); // e.g. "2026-07-24"
@@ -14,7 +14,7 @@ function todayString() {
 // Called automatically by the Live Camera page whenever it recognizes a face.
 // Smart logic: if the member has no "open" session today -> this is a CHECK-IN.
 //              if they already have an "open" session -> this is a CHECK-OUT.
-router.post('/mark', (req, res) => {
+router.post('/mark', async (req, res) => {
   const { buildClubId, name } = req.body;
   if (!buildClubId || !name) {
     return res.status(400).json({ error: 'buildClubId and name are required.' });
@@ -24,11 +24,13 @@ router.post('/mark', (req, res) => {
   const now = new Date();
 
   // Look for a session today that was checked in but NOT yet checked out
-  const openSession = db.prepare(`
-    SELECT * FROM attendance
-    WHERE buildClubId = ? AND date = ? AND checkOut IS NULL
-    ORDER BY id DESC LIMIT 1
-  `).get(buildClubId, today);
+  const { rows } = await pool.query(
+    `SELECT * FROM attendance
+     WHERE "buildClubId" = $1 AND date = $2 AND "checkOut" IS NULL
+     ORDER BY id DESC LIMIT 1`,
+    [buildClubId, today]
+  );
+  const openSession = rows[0];
 
   if (openSession) {
     // Don't let the camera "check someone out" 2 seconds after checking them in
@@ -41,8 +43,10 @@ router.post('/mark', (req, res) => {
 
     // This is a CHECK-OUT: close the session and calculate hours spent
     const hours = (now - checkInTime) / (1000 * 60 * 60);
-    db.prepare(`UPDATE attendance SET checkOut = ?, hours = ? WHERE id = ?`)
-      .run(now.toISOString(), Math.round(hours * 100) / 100, openSession.id);
+    await pool.query(
+      `UPDATE attendance SET "checkOut" = $1, hours = $2 WHERE id = $3`,
+      [now.toISOString(), Math.round(hours * 100) / 100, openSession.id]
+    );
 
     return res.json({
       status: 'checked-out',
@@ -50,8 +54,10 @@ router.post('/mark', (req, res) => {
     });
   } else {
     // This is a CHECK-IN: create a brand new session
-    db.prepare(`INSERT INTO attendance (buildClubId, name, date, checkIn) VALUES (?, ?, ?, ?)`)
-      .run(buildClubId, name, today, now.toISOString());
+    await pool.query(
+      `INSERT INTO attendance ("buildClubId", name, date, "checkIn") VALUES ($1, $2, $3, $4)`,
+      [buildClubId, name, today, now.toISOString()]
+    );
 
     return res.json({
       status: 'checked-in',
@@ -62,24 +68,27 @@ router.post('/mark', (req, res) => {
 
 // GET /api/attendance
 // Returns every attendance row ever logged (newest first) - used for the dashboard table.
-router.get('/', (req, res) => {
-  const logs = db.prepare('SELECT * FROM attendance ORDER BY id DESC').all();
-  res.json(logs);
+router.get('/', async (req, res) => {
+  const { rows } = await pool.query(`SELECT * FROM attendance ORDER BY id DESC`);
+  res.json(rows);
 });
 
 // GET /api/attendance/inside
 // Returns everyone who is checked in RIGHT NOW (no checkout yet, today).
-router.get('/inside', (req, res) => {
+router.get('/inside', async (req, res) => {
   const today = todayString();
-  const inside = db.prepare(`SELECT * FROM attendance WHERE date = ? AND checkOut IS NULL`).all(today);
-  res.json(inside);
+  const { rows } = await pool.query(
+    `SELECT * FROM attendance WHERE date = $1 AND "checkOut" IS NULL`,
+    [today]
+  );
+  res.json(rows);
 });
 
 // GET /api/attendance/summary
 // Returns total hours, visit count, current streak, and earned badges per member.
 // This is what powers the leaderboard - the streaks/badges make it feel like a real product.
-router.get('/summary', (req, res) => {
-  const rows = db.prepare('SELECT * FROM attendance ORDER BY checkIn ASC').all();
+router.get('/summary', async (req, res) => {
+  const { rows } = await pool.query(`SELECT * FROM attendance ORDER BY "checkIn" ASC`);
   const today = todayString();
 
   const byMember = {};
@@ -142,8 +151,8 @@ router.get('/summary', (req, res) => {
 // GET /api/attendance/export
 // Downloads every attendance row as a CSV file - opens straight in Excel/Google Sheets.
 // Great to show judges: "our data isn't locked away, it's exportable anytime."
-router.get('/export', (req, res) => {
-  const logs = db.prepare('SELECT * FROM attendance ORDER BY date DESC, id DESC').all();
+router.get('/export', async (req, res) => {
+  const { rows: logs } = await pool.query(`SELECT * FROM attendance ORDER BY date DESC, id DESC`);
   const header = 'Name,BuildClubID,Date,CheckIn,CheckOut,Hours\n';
   const rows = logs.map(r =>
     `${r.name},${r.buildClubId},${r.date},${r.checkIn},${r.checkOut || ''},${r.hours ?? ''}`
@@ -156,13 +165,20 @@ router.get('/export', (req, res) => {
 // GET /api/attendance/heatmap
 // Returns total hours logged per day - used to draw the GitHub-style activity calendar
 // on the dashboard (a nice "wow" visual for judges).
-router.get('/heatmap', (req, res) => {
-  const data = db.prepare(`
-    SELECT date, ROUND(SUM(COALESCE(hours, 0)), 2) as totalHours, COUNT(*) as visits
+router.get('/heatmap', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT date, COALESCE(SUM(hours), 0) as "totalHours", COUNT(*) as visits
     FROM attendance
     GROUP BY date
     ORDER BY date ASC
-  `).all();
+  `);
+  // We convert the numbers explicitly here because Postgres sometimes sends
+  // them back as text - this keeps the dashboard chart working correctly.
+  const data = rows.map(r => ({
+    date: r.date,
+    totalHours: Math.round(Number(r.totalHours) * 100) / 100,
+    visits: Number(r.visits)
+  }));
   res.json(data);
 });
 
@@ -170,17 +186,22 @@ router.get('/heatmap', (req, res) => {
 // missed them, laptop closed, etc.) this closes their session automatically
 // after a long time so their "hours" don't grow forever. Call this on a timer.
 const STALE_HOURS = 12;
-function autoCloseStaleSessions() {
+async function autoCloseStaleSessions() {
   const cutoffISO = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000).toISOString();
-  const stale = db.prepare(`SELECT * FROM attendance WHERE checkOut IS NULL AND checkIn < ?`).all(cutoffISO);
+  const { rows: stale } = await pool.query(
+    `SELECT * FROM attendance WHERE "checkOut" IS NULL AND "checkIn" < $1`,
+    [cutoffISO]
+  );
 
-  stale.forEach(s => {
+  for (const s of stale) {
     const checkInTime = new Date(s.checkIn);
     const checkOutTime = new Date(checkInTime.getTime() + STALE_HOURS * 60 * 60 * 1000);
-    db.prepare(`UPDATE attendance SET checkOut = ?, hours = ? WHERE id = ?`)
-      .run(checkOutTime.toISOString(), STALE_HOURS, s.id);
+    await pool.query(
+      `UPDATE attendance SET "checkOut" = $1, hours = $2 WHERE id = $3`,
+      [checkOutTime.toISOString(), STALE_HOURS, s.id]
+    );
     console.log(`⏰ Auto-checked-out ${s.name} (forgot to check out - capped at ${STALE_HOURS}h).`);
-  });
+  }
 }
 router.autoCloseStaleSessions = autoCloseStaleSessions;
 

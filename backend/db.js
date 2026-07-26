@@ -1,37 +1,52 @@
 // db.js
-// This file sets up our tiny database (like a phonebook + a logbook).
-// It uses SQLite, which just saves everything into ONE simple file called attendance.db
-// You don't need to install any separate database software - it just works.
+// This file connects to our database.
+//
+// IMPORTANT CHANGE: this used to save everything into one local file
+// (attendance.db) using SQLite. That worked great on your own laptop, but
+// free hosting like Render does NOT keep local files - they get wiped every
+// time the site restarts or goes to sleep. So we now use Postgres, a real
+// cloud database (we're using a free one from neon.tech). The data now lives
+// on the internet, not on the server's disk, so it survives restarts,
+// redeploys, and the free-tier "sleep" that happens after 15 minutes of
+// no visitors.
+//
+// You don't need to install any database software - Neon hosts it for you,
+// for free. You just need one secret connection string, saved as
+// DATABASE_URL (see .env.example).
 
-const Database = require('better-sqlite3');
-const path = require('path');
+const { Pool } = require('pg');
 
-// This creates (or opens, if it already exists) attendance.db right inside the backend folder
-const db = new Database(path.join(__dirname, 'attendance.db'));
-db.pragma('journal_mode = WAL');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // Neon requires a secure connection
+});
 
-// TABLE 1: "members" -> our phonebook of registered faces
-db.exec(`
-  CREATE TABLE IF NOT EXISTS members (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    buildClubId TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    descriptor TEXT NOT NULL,        -- the "face fingerprint" saved as JSON text
-    createdAt TEXT DEFAULT (datetime('now'))
-  )
-`);
+// Creates our two tables the first time the app ever starts.
+// If they already exist, this does nothing (safe to run every time).
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS members (
+      id SERIAL PRIMARY KEY,
+      "buildClubId" TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      descriptor TEXT NOT NULL,        -- the "face fingerprint" saved as JSON text
+      "createdAt" TIMESTAMP DEFAULT NOW()
+    )
+  `);
 
-// TABLE 2: "attendance" -> our logbook of check-ins and check-outs
-db.exec(`
-  CREATE TABLE IF NOT EXISTS attendance (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    buildClubId TEXT NOT NULL,
-    name TEXT NOT NULL,
-    date TEXT NOT NULL,
-    checkIn TEXT NOT NULL,
-    checkOut TEXT,
-    hours REAL
-  )
-`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS attendance (
+      id SERIAL PRIMARY KEY,
+      "buildClubId" TEXT NOT NULL,
+      name TEXT NOT NULL,
+      date TEXT NOT NULL,
+      "checkIn" TEXT NOT NULL,
+      "checkOut" TEXT,
+      hours REAL
+    )
+  `);
 
-module.exports = db;
+  console.log('✅ Database ready (tables created if they didn\'t exist).');
+}
+
+module.exports = { pool, initDb };

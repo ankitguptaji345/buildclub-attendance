@@ -3,14 +3,14 @@
 
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const { pool } = require('../db');
 const config = require('../config');
 
 // POST /api/members/register
 // Called ONE TIME per member, from the Registration page.
 // Saves their Build Club ID, Name, and their face "fingerprint" (descriptor).
 // Requires the admin password so random people can't register fake faces.
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const { buildClubId, name, descriptor, adminPassword } = req.body;
 
   if (adminPassword !== config.ADMIN_PASSWORD) {
@@ -22,14 +22,13 @@ router.post('/register', (req, res) => {
   }
 
   try {
-    const stmt = db.prepare(`
-      INSERT INTO members (buildClubId, name, descriptor)
-      VALUES (?, ?, ?)
-    `);
-    stmt.run(buildClubId, name, JSON.stringify(descriptor));
+    await pool.query(
+      `INSERT INTO members ("buildClubId", name, descriptor) VALUES ($1, $2, $3)`,
+      [buildClubId, name, JSON.stringify(descriptor)]
+    );
     res.json({ success: true, message: `${name} registered successfully!` });
   } catch (err) {
-    if (err.message.includes('UNIQUE')) {
+    if (err.code === '23505') { // Postgres's "unique constraint violated" error code
       return res.status(400).json({ error: `Build Club ID "${buildClubId}" is already registered.` });
     }
     console.error(err);
@@ -40,9 +39,11 @@ router.post('/register', (req, res) => {
 // GET /api/members
 // Returns every registered member + their face fingerprint.
 // The Live Camera page loads this once so it knows every face to compare against.
-router.get('/', (req, res) => {
-  const members = db.prepare('SELECT id, buildClubId, name, descriptor, createdAt FROM members').all();
-  const parsed = members.map(m => ({
+router.get('/', async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT id, "buildClubId", name, descriptor, "createdAt" FROM members`
+  );
+  const parsed = rows.map(m => ({
     ...m,
     descriptor: JSON.parse(m.descriptor) // turn the saved text back into a real array of numbers
   }));
@@ -51,8 +52,8 @@ router.get('/', (req, res) => {
 
 // DELETE /api/members/:buildClubId
 // Handy during testing if someone registers their face wrong and needs a redo.
-router.delete('/:buildClubId', (req, res) => {
-  db.prepare('DELETE FROM members WHERE buildClubId = ?').run(req.params.buildClubId);
+router.delete('/:buildClubId', async (req, res) => {
+  await pool.query(`DELETE FROM members WHERE "buildClubId" = $1`, [req.params.buildClubId]);
   res.json({ success: true });
 });
 
