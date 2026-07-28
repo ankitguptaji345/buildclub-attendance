@@ -1,3 +1,6 @@
+// Wake Render's free-tier server so fetches don't fail on the first click
+fetch('/api/health').catch(() => {});
+
 // camera.js
 // This runs on the makerspace laptop all day. It watches the webcam,
 // compares every face it sees to the registered members, and automatically
@@ -10,6 +13,7 @@ let faceMatcher = null;
 const COOLDOWN_MS = 20000; // don't re-mark the same person within 20 seconds
 const lastMarked = {};     // { buildClubId: timestampOfLastMark }
 let soundOn = true;
+
 // ---------------- Detection tuning ---------------
 // FIX for "camera misses people who are far away or side-on":
 // face-api.js's TinyFaceDetector defaults to inputSize 416 / scoreThreshold
@@ -23,19 +27,20 @@ let soundOn = true;
 // little extra CPU per frame, which is why we still only run twice a
 // second (see detectLoop below) instead of every frame.
 const DETECTOR_OPTIONS = new faceapi.TinyFaceDetectorOptions({
-9 Build Club Attendance - Upgrade Report
   inputSize: 608,
   scoreThreshold: 0.4
 });
+
 // 0.6 is face-api.js's own recommended cutoff for "same person" - below
 // this Euclidean distance counts as a match, above it counts as unknown.
 // We keep it as a named constant here so it's easy to nudge later:
 // raising it (e.g. 0.65) makes matching MORE forgiving of angle/lighting
 // at the cost of being slightly more likely to confuse two similar-looking
 // people; lowering it does the opposite. The real fix for angle tolerance
-// is registering multiple face angles per person (see register.js) 
+// is registering multiple face angles per person (see register.js) -
 // this threshold is just a fine-tuning knob on top of that.
 const MATCH_DISTANCE_THRESHOLD = 0.6;
+
 // ---------------- Live clock ---------------
 function updateClock() {
   const el = document.getElementById('liveClock');
@@ -43,12 +48,14 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
+
 // ---------------- Sound mute toggle ---------------
 const muteBtn = document.getElementById('muteBtn');
 muteBtn?.addEventListener('click', () => {
   soundOn = !soundOn;
-  muteBtn.textContent = soundOn ? ' Sound On' : ' Sound Off';
+  muteBtn.textContent = soundOn ? '🔊 Sound On' : '🔇 Sound Off';
 });
+
 // ---------------- Kiosk / fullscreen mode ---------------
 const kioskBtn = document.getElementById('kioskBtn');
 kioskBtn?.addEventListener('click', () => {
@@ -59,18 +66,21 @@ kioskBtn?.addEventListener('click', () => {
     document.exitFullscreen?.().catch(() => {});
   }
 });
+
 function showStatus(message, type = 'info') {
   statusBox.innerHTML = message;
   statusBox.className = `status show ${type}`;
 }
+
 async function startWebcam() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
     video.srcObject = stream;
   } catch (err) {
-    showStatus(' Could not access webcam. Please allow camera permission.', 'err');
+    showStatus('❌ Could not access webcam. Please allow camera permission.', 'err');
   }
 }
+
 async function loadModels() {
   showStatus('<span class="spinner"></span>Loading face recognition models...', 'info');
   const MODEL_URL = 'models';
@@ -78,14 +88,15 @@ async function loadModels() {
   await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
   await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
 }
+
 // Loads every registered member from the backend and builds a "matcher"
 // that can quickly compare a new face to all known faces.
 async function loadKnownFaces() {
   showStatus('<span class="spinner"></span>Loading registered members...', 'info');
   const res = await fetch('/api/members');
   const members = await res.json();
- if (members.length === 0) {
-    showStatus(' No members registered yet. Go to the Register page first.', 'err');
+  if (members.length === 0) {
+    showStatus('⚠️ No members registered yet. Go to the Register page first.', 'err');
     return;
   }
   // m.descriptors is an ARRAY of face fingerprints (one per angle captured
@@ -102,9 +113,10 @@ async function loadKnownFaces() {
     )
   );
   faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, MATCH_DISTANCE_THRESHOLD);
-  showStatus(` Ready! Watching for ${members.length} registered member(s).`, 'ok');
+  showStatus(`✅ Ready! Watching for ${members.length} registered member(s).`, 'ok');
   videoWrap.classList.add('scanning');
 }
+
 async function markAttendance(name, buildClubId, confidencePct) {
   const now = Date.now();
   if (lastMarked[buildClubId] && now - lastMarked[buildClubId] < COOLDOWN_MS) {
@@ -119,18 +131,18 @@ async function markAttendance(name, buildClubId, confidencePct) {
     });
     const data = await res.json();
     if (data.status === 'checked-in') {
-      showToast(` Welcome, ${name}!`, `Match confidence: ${confidencePct}% · Checked in just
-        now`, 'in');
+      showToast(`👋 Welcome, ${name}!`, `Match confidence: ${confidencePct}% · Checked in just now`, 'in');
       if (soundOn) playBeep('in');
     } else if (data.status === 'checked-out') {
-      showToast(` Bye, ${name}!`, data.message.replace(`Bye ${name}! `, ''), 'out');
+      showToast(`👋 Bye, ${name}!`, data.message.replace(`Bye ${name}! `, ''), 'out');
       if (soundOn) playBeep('out');
     }
     // 'already-checked-in' -> stay quiet, no need to spam a toast
   } catch (err) {
-    showToast(' Connection issue', 'Could not reach the server to mark attendance.', 'warn');
+    showToast('⚠️ Connection issue', 'Could not reach the server to mark attendance.', 'warn');
   }
 }
+
 async function detectLoop() {
   if (faceMatcher) {
     const results = await faceapi
@@ -139,12 +151,11 @@ async function detectLoop() {
       .withFaceDescriptors();
     const ctx = overlay.getContext('2d');
     ctx.clearRect(0, 0, overlay.width, overlay.height);
-    const resized = faceapi.resizeResults(results, { width: overlay.width, height:
-      overlay.height });
+    const resized = faceapi.resizeResults(results, { width: overlay.width, height: overlay.height });
     resized.forEach((result, i) => {
       const match = faceMatcher.findBestMatch(results[i].descriptor);
       const box = result.detection.box;
- let label = 'Unknown';
+      let label = 'Unknown';
       let boxColor = '#e05555';
       if (match.label !== 'unknown') {
         const [name, buildClubId] = match.label.split('|');
@@ -162,6 +173,7 @@ async function detectLoop() {
   // gentle enough not to overload the laptop.
   setTimeout(() => requestAnimationFrame(detectLoop), 500);
 }
+
 (async function init() {
   await startWebcam();
   await loadModels();
