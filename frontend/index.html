@@ -3,38 +3,95 @@
 <head>
   <meta charset="UTF-8">
   <title>Build Club Attendance</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22
+    viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav>
-    <div class="brand">🏆 BUILD CLUB</div>
+    <div class="brand"> BUILD CLUB</div>
     <a href="index.html" class="active">Home</a>
     <a href="register.html">Register</a>
     <a href="camera.html">Live Camera</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
-
   <div class="container">
-    <div class="card">
+    <div class="card hero">
+      <div class="hero-badge"> Live System - Not a Mockup</div>
       <h1>Smart Attendance System</h1>
-      <p>Face-recognition attendance for the makerspace. Register once, then just walk in front of the camera.</p>
+      <p>Face-recognition attendance for the makerspace. Register once, then just walk in
+        front of the camera - no cards, no sign-in sheets, no manual tracking.</p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="num" id="heroInside">-</div>
+          <div class="label">Inside Right Now</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num" id="heroMembers">-</div>
+          <div class="label">Registered Makers</div>
+        </div>
+        <div class="hero-stat">
+          <div class="num" id="heroHours">-</div>
+          <div class="label">Hours Logged</div>
+        </div>
+      </div>
     </div>
-
     <div class="home-links">
       <a href="register.html">
-        <span class="emoji">🪪</span>
+        <span class="emoji"></span>
         1. Register a Face
       </a>
       <a href="camera.html">
-        <span class="emoji">📷</span>
+        <span class="emoji"></span>
         2. Live Camera
       </a>
       <a href="dashboard.html">
-        <span class="emoji">📊</span>
+ <span class="emoji"></span>
         3. Dashboard
       </a>
     </div>
+    <div class="card">
+      <h2> What's Inside</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="f-icon"></span>
+          <div class="f-title">Multi-Angle Face Recognition</div>
+          <div class="f-desc">Learns each member from 5 angles, so it still recognizes you
+            from the side or a few steps away.</div>
+        </div>
+        <div class="feature-card">
+          <span class="f-icon"></span>
+          <div class="f-title">Real-Time Check-In/Out</div>
+          <div class="f-desc">Walk in, get logged automatically. Walk out, get checked out.
+            No taps, no cards.</div>
+        </div>
+        <div class="feature-card">
+          <span class="f-icon"></span>
+          <div class="f-title">Leaderboard &amp; Badges</div>
+          <div class="f-desc">Streaks, hour milestones, Early Bird and Night Owl badges keep
+            members coming back.</div>
+        </div>
+        <div class="feature-card">
+          <span class="f-icon"></span>
+          <div class="f-title">Activity Heatmap</div>
+          <div class="f-desc">A GitHub-style calendar of makerspace activity over the last
+            26 weeks.</div>
+        </div>
+        <div class="feature-card">
+          <span class="f-icon"></span>
+          <div class="f-title">Admin-Gated Registration</div>
+          <div class="f-desc">Only an admin password can add a new face, so strangers can't
+            register themselves.</div>
+        </div>
+        <div class="feature-card">
+          <span class="f-icon"></span>
+          <div class="f-title">One-Click CSV Export</div>
+          <div class="f-desc">Every check-in and check-out, exportable straight to Excel or
+            Google Sheets.</div>
+        </div>
+      </div>
+    </div>
   </div>
+  <script defer src="js/home.js"></script>
 </body>
 </html>
