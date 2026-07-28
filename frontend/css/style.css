@@ -427,7 +427,128 @@ body.kiosk-mode nav { display: none; }
 .pose-dot.active { border-color: var(--blue); background: var(--light-blue); }
 .pose-dot.done { border-color: var(--green); background: var(--light-green); color: #1e6b2b; }
 
+/* ---------- Role selector (register.html step 1) ---------- */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+.role-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  color: var(--navy);
+  border: 2px solid #e5e9ed;
+  border-radius: 12px;
+  padding: 18px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+.role-btn:hover {
+  border-color: var(--blue);
+  background: var(--light-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+.role-btn .role-icon { font-size: 26px; }
+.role-btn .role-note { font-size: 11px; font-weight: 400; color: var(--grey); }
+
+/* ---------- Role pills / chips (shared color language everywhere) ---------- */
+.role-pill, .table-role-pill, .role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.role-pill { padding: 5px 14px; font-size: 13px; text-transform: capitalize; }
+.table-role-pill { padding: 3px 10px; font-size: 11.5px; text-transform: capitalize; }
+.role-chip { padding: 6px 14px; font-size: 13px; }
+
+.role-admin  { background: #fdeaea; color: #a12626; border: 1px solid #e88a8a; }
+.role-mentor { background: #f3ecfb; color: #6a2fb0; border: 1px solid #c9a6ec; }
+.role-member { background: var(--light-blue); color: var(--navy); border: 1px solid #9cc3e0; }
+.role-guest  { background: #fff6e2; color: #966a08; border: 1px solid #e8c877; }
+
+.role-chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ---------- Dashboard: leaderboard split by role ---------- */
+.role-section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.role-section {
+  background: var(--bg);
+  border: 1px solid #e5e9ed;
+  border-left: 4px solid var(--blue);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.role-section.role-admin  { border-left-color: #d05252; }
+.role-section.role-mentor { border-left-color: #8b4fd6; }
+.role-section.role-member { border-left-color: var(--blue); }
+.role-section.role-guest  { border-left-color: #d6a12f; }
+.role-section h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.role-count {
+  background: #fff;
+  border-radius: 20px;
+  padding: 1px 9px;
+  font-size: 11.5px;
+  color: var(--grey);
+  border: 1px solid #dfe4e8;
+}
+.role-section .leaderboard-row { padding: 8px 0; }
+
+/* ---------- Dashboard: role filter tabs above the attendance log ---------- */
+.role-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 14px;
+  flex-wrap: wrap;
+}
+.role-tab {
+  background: #fff;
+  color: var(--navy);
+  border: 1.5px solid #dfe4e8;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.role-tab:hover { border-color: var(--blue); }
+.role-tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+/* ---------- Auto-capture progress ring (register.html) ---------- */
+.auto-capture-ring {
+  --fill: 0%;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: conic-gradient(var(--green) var(--fill), rgba(255,255,255,0.35) var(--fill));
+  border: 2px solid rgba(255,255,255,0.6);
+  transition: background 0.08s linear;
+}
+.video-wrap { position: relative; }
+
 /* ---------- Small screens ---------- */
 @media (max-width: 640px) {
-  .hero-stats, .features-grid, .home-links, .stat-grid { grid-template-columns: 1fr; }
+  .hero-stats, .features-grid, .home-links, .stat-grid, .role-grid { grid-template-columns: 1fr; }
 }

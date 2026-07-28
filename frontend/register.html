@@ -3,34 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <title>Register - Build Club Attendance</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22
-    viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav>
-    <div class="brand"> BUILD CLUB</div>
+    <div class="brand">🏆 BUILD CLUB</div>
     <a href="index.html">Home</a>
     <a href="register.html" class="active">Register</a>
     <a href="camera.html">Live Camera</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
+
   <div class="container">
-    <div class="card" id="lockCard">
-      <h1> Admin Access Required</h1>
-      <p>Registering a new face changes who the system trusts. Enter the team admin password
-        to continue.</p>
+
+    <div class="card" id="roleCard">
+      <h1>👤 Who Are You Registering?</h1>
+      <p>Pick a role first. Guests can register themselves with no password - everyone else needs the team admin password, since it changes who the system trusts.</p>
+      <div class="role-grid">
+        <button class="role-btn" data-role="admin"><span class="role-icon">🛡️</span><span>Admin</span><span class="role-note">password needed</span></button>
+        <button class="role-btn" data-role="mentor"><span class="role-icon">🎓</span><span>Mentor</span><span class="role-note">password needed</span></button>
+        <button class="role-btn" data-role="member"><span class="role-icon">🔧</span><span>Member</span><span class="role-note">password needed</span></button>
+        <button class="role-btn" data-role="guest"><span class="role-icon">🙋</span><span>Guest</span><span class="role-note">no password</span></button>
+      </div>
+    </div>
+
+    <div class="card" id="lockCard" style="display:none;">
+      <h1>🔒 Admin Access Required</h1>
+      <p>Registering a <span id="lockRoleLabel">member</span> changes who the system trusts. Enter the team admin password to continue.</p>
       <label>Admin Password</label>
-      <input type="text" id="adminPassword" placeholder="Ask a teammate if you don't know
-        it" autocomplete="off">
-      <button id="unlockBtn"> Unlock Registration</button>
+      <input type="text" id="adminPassword" placeholder="Ask a teammate if you don't know it" autocomplete="off">
+      <button id="unlockBtn">🔓 Unlock Registration</button>
+      <button class="icon-btn" id="backFromLockBtn" type="button">← Choose a different role</button>
       <div id="lockStatus" class="status"></div>
     </div>
+
     <div class="card" id="formCard" style="display:none;">
-      <h1> One-Time Face Registration</h1>
-      <p>Fill in your details, then capture your face from <b>5 angles</b> (front, left,
-        right, up, down) so the Live Camera still recognizes you even from the side or a few
-        steps away.</p>
+      <div class="card-header-row">
+        <h1>📸 One-Time Face Registration</h1>
+        <span class="role-pill" id="formRolePill">member</span>
+      </div>
+      <p>Fill in the details below. Then just <b>look at the camera and slowly turn your head</b> through 5 angles (front, left, right, up, down) - each pose captures itself automatically the moment you hold it steady, so the Live Camera still recognizes you even from the side or a few steps away.</p>
       <label>Build Club ID</label>
       <input type="text" id="buildClubId" placeholder="e.g. 101">
       <label>Full Name</label>
@@ -39,21 +52,25 @@
         <div class="video-wrap">
           <video id="video" autoplay muted playsinline width="480" height="360"></video>
           <canvas id="overlay" width="480" height="360"></canvas>
+          <div class="auto-capture-ring" id="captureRing"></div>
         </div>
       </div>
       <div class="pose-progress">
-        <div class="pose-instruction" id="poseInstruction"> Step 1 of 5: Look straight at
-          the camera</div>
+        <div class="pose-instruction" id="poseInstruction">Step 1 of 5: Look straight at the camera</div>
         <div class="pose-dots" id="poseDots"></div>
       </div>
       <div style="margin-top:12px;">
-        <button id="captureBtn"> Capture This Angle (1/5)</button>
-        <button id="startOverBtn" class="icon-btn" type="button">n Start Over</button>
+        <button id="captureBtn" class="icon-btn">📸 Capture Now (Manual)</button>
+        <button id="startOverBtn" class="icon-btn" type="button">↺ Start Over</button>
+        <button id="backFromFormBtn" class="icon-btn" type="button">← Choose a different role</button>
       </div>
       <div id="status" class="status"></div>
     </div>
+
   </div>
+
   <div id="toastContainer"></div>
+
   <script defer src="lib/face-api.min.js"></script>
   <script defer src="js/toast.js"></script>
   <script defer src="js/register.js"></script>

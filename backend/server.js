@@ -3,9 +3,7 @@
 //  1) Serves the frontend website (the HTML/CSS/JS pages)
 //  2) Answers API requests (save a member, mark attendance, get charts data)
 
-// IMPORTANT: pass an explicit path so dotenv finds backend/.env even when
-// the server is started from the project root (which is what Render does).
-require('dotenv').config({ path: __dirname + '/.env' });
+require('dotenv').config(); // loads backend/.env when running on your own computer
 
 const express = require('express');
 const cors = require('cors');
@@ -35,11 +33,6 @@ app.use(express.static(path.join(__dirname, '..', 'frontend')));
 app.use('/api/members', membersRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/auth', authRoutes);
-
-// Cheap health-check endpoint. The frontend pings this on page load so
-// Render's free-tier server starts waking up BEFORE the user clicks
-// anything - stops the "Failed to fetch" errors you see on the first try.
-app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 async function start() {
   // Make sure our two database tables exist before we accept any traffic.

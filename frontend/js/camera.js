@@ -1,6 +1,3 @@
-// Wake Render's free-tier server so fetches don't fail on the first click
-fetch('/api/health').catch(() => {});
-
 // camera.js
 // This runs on the makerspace laptop all day. It watches the webcam,
 // compares every face it sees to the registered members, and automatically
@@ -10,12 +7,12 @@ const overlay = document.getElementById('overlay');
 const statusBox = document.getElementById('status');
 const videoWrap = document.querySelector('.video-wrap');
 let faceMatcher = null;
+let memberByLabel = {}; // label ("name|id") -> { role } so we can show role on the box
 const COOLDOWN_MS = 20000; // don't re-mark the same person within 20 seconds
 const lastMarked = {};     // { buildClubId: timestampOfLastMark }
 let soundOn = true;
 
 // ---------------- Detection tuning ---------------
-// FIX for "camera misses people who are far away or side-on":
 // face-api.js's TinyFaceDetector defaults to inputSize 416 / scoreThreshold
 // 0.5, which is tuned for a face that fills most of a webcam-close frame.
 // A makerspace camera is usually mounted further back and catches people
@@ -23,9 +20,7 @@ let soundOn = true;
 // Bumping inputSize up (must be a multiple of 32 - common values are 320,
 // 416, 512, 608) lets the detector "see" smaller/farther faces, and
 // lowering scoreThreshold stops it from throwing away detections just
-// because the face isn't perfectly square-on to the lens. This costs a
-// little extra CPU per frame, which is why we still only run twice a
-// second (see detectLoop below) instead of every frame.
+// because the face isn't perfectly square-on to the lens.
 const DETECTOR_OPTIONS = new faceapi.TinyFaceDetectorOptions({
   inputSize: 608,
   scoreThreshold: 0.4
@@ -33,12 +28,9 @@ const DETECTOR_OPTIONS = new faceapi.TinyFaceDetectorOptions({
 
 // 0.6 is face-api.js's own recommended cutoff for "same person" - below
 // this Euclidean distance counts as a match, above it counts as unknown.
-// We keep it as a named constant here so it's easy to nudge later:
-// raising it (e.g. 0.65) makes matching MORE forgiving of angle/lighting
+// Raising it (e.g. 0.65) makes matching MORE forgiving of angle/lighting
 // at the cost of being slightly more likely to confuse two similar-looking
-// people; lowering it does the opposite. The real fix for angle tolerance
-// is registering multiple face angles per person (see register.js) -
-// this threshold is just a fine-tuning knob on top of that.
+// people; lowering it does the opposite.
 const MATCH_DISTANCE_THRESHOLD = 0.6;
 
 // ---------------- Live clock ---------------
@@ -102,16 +94,19 @@ async function loadKnownFaces() {
   // m.descriptors is an ARRAY of face fingerprints (one per angle captured
   // at registration - front, left, right, up, down). Passing all of them
   // in here is exactly what face-api.js's LabeledFaceDescriptors is
-  // designed for: it compares an incoming face to every reference angle
-  // and averages the distance, so someone caught side-on by the camera
-  // still matches closely against the "left"/"right" reference shots
-  // instead of only ever being compared to one frontal photo.
-  const labeledDescriptors = members.map(m =>
-    new faceapi.LabeledFaceDescriptors(
-      `${m.name}|${m.buildClubId}`,           // we pack name + id together as the "label"
+  // designed for: it compares an incoming face to every reference angle,
+  // so someone caught side-on by the camera still matches closely against
+  // the "left"/"right" reference shots instead of only ever being
+  // compared to one frontal photo.
+  memberByLabel = {};
+  const labeledDescriptors = members.map(m => {
+    const label = `${m.name}|${m.buildClubId}`;
+    memberByLabel[label] = { role: m.role || 'member' };
+    return new faceapi.LabeledFaceDescriptors(
+      label,
       m.descriptors.map(d => new Float32Array(d))
-    )
-  );
+    );
+  });
   faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, MATCH_DISTANCE_THRESHOLD);
   showStatus(`✅ Ready! Watching for ${members.length} registered member(s).`, 'ok');
   videoWrap.classList.add('scanning');
@@ -159,9 +154,10 @@ async function detectLoop() {
       let boxColor = '#e05555';
       if (match.label !== 'unknown') {
         const [name, buildClubId] = match.label.split('|');
+        const role = memberByLabel[match.label]?.role || 'member';
         // Turn the "distance" (lower = better match) into a friendly confidence %
         const confidencePct = Math.max(0, Math.round((1 - match.distance) * 100));
-        label = `${name} (${confidencePct}%)`;
+        label = `${name} (${role}, ${confidencePct}%)`;
         boxColor = '#3FA34D';
         markAttendance(name, buildClubId, confidencePct);
       }
