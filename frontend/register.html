@@ -3,52 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <title>Register - Build Club Attendance</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22
+    viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav>
-    <div class="brand">🏆 BUILD CLUB</div>
+    <div class="brand"> BUILD CLUB</div>
     <a href="index.html">Home</a>
     <a href="register.html" class="active">Register</a>
     <a href="camera.html">Live Camera</a>
     <a href="dashboard.html">Dashboard</a>
   </nav>
-
   <div class="container">
     <div class="card" id="lockCard">
-      <h1>🔒 Admin Access Required</h1>
-      <p>Registering a new face changes who the system trusts. Enter the team admin password to continue.</p>
+      <h1> Admin Access Required</h1>
+      <p>Registering a new face changes who the system trusts. Enter the team admin password
+        to continue.</p>
       <label>Admin Password</label>
-      <input type="text" id="adminPassword" placeholder="Ask a teammate if you don't know it" autocomplete="off">
-      <button id="unlockBtn">🔓 Unlock Registration</button>
+      <input type="text" id="adminPassword" placeholder="Ask a teammate if you don't know
+        it" autocomplete="off">
+      <button id="unlockBtn"> Unlock Registration</button>
       <div id="lockStatus" class="status"></div>
     </div>
-
     <div class="card" id="formCard" style="display:none;">
-      <h1>🪪 One-Time Face Registration</h1>
-      <p>Fill in your details, let the camera see your face clearly, then click <b>Capture My Face</b>.</p>
-
+      <h1> One-Time Face Registration</h1>
+      <p>Fill in your details, then capture your face from <b>5 angles</b> (front, left,
+        right, up, down) so the Live Camera still recognizes you even from the side or a few
+        steps away.</p>
       <label>Build Club ID</label>
       <input type="text" id="buildClubId" placeholder="e.g. 101">
-
       <label>Full Name</label>
       <input type="text" id="name" placeholder="e.g. Rahul Sharma">
-
       <div style="margin-top:16px;">
         <div class="video-wrap">
           <video id="video" autoplay muted playsinline width="480" height="360"></video>
           <canvas id="overlay" width="480" height="360"></canvas>
         </div>
       </div>
-
-      <button id="captureBtn">📸 Capture My Face</button>
+      <div class="pose-progress">
+        <div class="pose-instruction" id="poseInstruction"> Step 1 of 5: Look straight at
+          the camera</div>
+        <div class="pose-dots" id="poseDots"></div>
+      </div>
+      <div style="margin-top:12px;">
+        <button id="captureBtn"> Capture This Angle (1/5)</button>
+        <button id="startOverBtn" class="icon-btn" type="button">n Start Over</button>
+      </div>
       <div id="status" class="status"></div>
     </div>
   </div>
-
   <div id="toastContainer"></div>
-
   <script defer src="lib/face-api.min.js"></script>
   <script defer src="js/toast.js"></script>
   <script defer src="js/register.js"></script>
