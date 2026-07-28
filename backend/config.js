@@ -1,7 +1,4 @@
-// config.js
-// Reads the admin password from the environment. If it's missing we
-// print a loud warning at startup so the bug is obvious in Render's
-// logs instead of silently letting every password fail.
+// config.js — reads the admin password from env, warns loudly if missing.
 
 const pwd = process.env.ADMIN_PASSWORD;
 
