@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <title>Dashboard - Build Club Attendance</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22
+    viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav>
-    <div class="brand">🏆 BUILD CLUB</div>
+    <div class="brand"> BUILD CLUB</div>
     <a href="index.html">Home</a>
     <a href="register.html">Register</a>
-    <a href="camera.html">Live Camera</a>
+ <a href="camera.html">Live Camera</a>
     <a href="dashboard.html" class="active">Dashboard</a>
   </nav>
-
   <div class="container">
     <div class="card-header-row">
-      <h1>📊 Attendance Dashboard</h1>
-      <button class="btn-small secondary" onclick="window.location.href='/api/attendance/export'">⬇️ Export CSV</button>
+      <h1> Attendance Dashboard</h1>
+      <button class="btn-small secondary"
+        onclick="window.location.href='/api/attendance/export'"> Export CSV</button>
     </div>
-
     <div class="stat-grid">
       <div class="stat-box">
         <div class="num" id="statInside">-</div>
@@ -35,45 +35,52 @@
         <div class="label">Total Visits Logged</div>
       </div>
     </div>
-
     <div class="card">
-      <h2>🏅 Leaderboard - Most Active Makers</h2>
+      <h2> Leaderboard - Most Active Makers</h2>
       <div id="leaderboard"></div>
     </div>
-
     <div class="card">
-      <h2>🕒 Total Hours per Member</h2>
+      <h2> Total Hours per Member</h2>
       <canvas id="hoursChart" height="110"></canvas>
     </div>
-
     <div class="card">
-      <h2>🔥 Makerspace Activity (last 26 weeks)</h2>
+      <h2>n Arrival vs Departure Times</h2>
+      <canvas id="peakHoursChart" height="110"></canvas>
+      <p class="chart-caption">When the makerspace actually fills up and empties out 
+        useful for staffing the front desk and scheduling events.</p>
+    </div>
+    <div class="card">
+      <h2> Makerspace Activity (last 26 weeks)</h2>
       <div class="heatmap" id="heatmap"></div>
       <div class="heatmap-legend">
-        Less <div class="cell"></div><div class="cell l1"></div><div class="cell l2"></div><div class="cell l3"></div><div class="cell l4"></div> More
+        Less <div class="cell"></div><div class="cell l1"></div><div class="cell
+          l2"></div><div class="cell l3"></div><div class="cell l4"></div> More
       </div>
     </div>
-
     <div class="card">
-      <h2>🟢 Currently Inside</h2>
+      <h2> Visits - Last 14 Days</h2>
+      <canvas id="trendChart" height="90"></canvas>
+    </div>
+    <div class="card">
+      <h2> Currently Inside</h2>
       <table id="insideTable">
         <thead><tr><th>Name</th><th>ID</th><th>Checked In At</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
-
     <div class="card">
       <div class="card-header-row">
-        <h2>📋 Attendance Log</h2>
-        <input type="text" id="logSearch" placeholder="🔍 Search by name or ID..." style="max-width:220px; margin-top:0;">
+        <h2> Attendance Log</h2>
+        <input type="text" id="logSearch" placeholder=" Search by name or ID..."
+  style="max-width:220px; margin-top:0;">
       </div>
       <table id="logTable">
-        <thead><tr><th>Name</th><th>ID</th><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Hours</th></tr></thead>
+        <thead><tr><th>Name</th><th>ID</th><th>Date</th><th>Check-In</th><th>Check-Out</th><
+          th>Hours</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
   </div>
-
   <script src="lib/chart.umd.js"></script>
   <script defer src="js/dashboard.js"></script>
 </body>
