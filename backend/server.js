@@ -1,10 +1,7 @@
-// server.js
-// This is the "brain" of the whole project. It starts a small web server that:
-//  1) Serves the frontend website (the HTML/CSS/JS pages)
-//  2) Answers API requests (save a member, mark attendance, get charts data)
+// server.js — Build Club Attendance backend entry point
 
-// IMPORTANT: pass an explicit path so dotenv finds backend/.env even when
-// the server is started from the project root (which is what Render does).
+// Load backend/.env explicitly so it works whether the server was started
+// from the project root (Render) or from backend/ (local `npm start`).
 require('dotenv').config({ path: __dirname + '/.env' });
 
 const express = require('express');
@@ -17,43 +14,33 @@ const attendanceRoutes = require('./routes/attendance');
 const authRoutes = require('./routes/auth');
 
 const app = express();
-
-// IMPORTANT CHANGE: this used to be hard-coded to 3000. Free hosts like
-// Render assign their own port number through an environment variable and
-// expect your app to listen on THAT port - if you ignore it and always use
-// 3000, the site never comes online. On your own computer, no PORT variable
-// is set, so it falls back to 3000 exactly like before.
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json({ limit: '15mb' })); // face fingerprints are longish arrays of numbers
+app.use(express.json({ limit: '15mb' }));
 
-// Serve the whole "frontend" folder as a plain website
+// Serve the frontend
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
-// Anything starting with /api/members or /api/attendance goes to our route files
+// API routes
 app.use('/api/members', membersRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/auth', authRoutes);
 
-// Cheap health-check endpoint. The frontend pings this on page load so
-// Render's free-tier server starts waking up BEFORE the user clicks
-// anything - stops the "Failed to fetch" errors you see on the first try.
-app.get('/api/health', (_req, res) => res.json({ ok: true }));
+// Health-check — the frontend pings this on load so Render's free-tier
+// server starts waking up BEFORE the user clicks anything.
+app.get('/api/health', (_req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
 async function start() {
-  // Make sure our two database tables exist before we accept any traffic.
   await initDb();
 
   app.listen(PORT, () => {
     console.log('====================================================');
-    console.log(`✅ Build Club Attendance server is running!`);
-    console.log(`👉 Open this in your browser: http://localhost:${PORT}`);
+    console.log(`✅ Build Club Attendance server running on port ${PORT}`);
     console.log('====================================================');
   });
 
-  // Safety net: auto-close any attendance session someone forgot to check out of.
-  // Runs once at startup, then every 15 minutes.
+  // Safety net: auto-close forgotten sessions on startup + every 15 min
   attendanceRoutes.autoCloseStaleSessions().catch(err =>
     console.error('Auto-checkout check failed:', err)
   );
