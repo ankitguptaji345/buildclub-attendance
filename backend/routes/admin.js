@@ -1,13 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db'); // FIXED: Changed from '../config/db' to '../db'
-const fs = require('fs');
-const path = require('path');
+const pool = require('../db'); // Use your existing db connection
 
 // Middleware: Check if user is admin
 const isAdmin = async (req, res, next) => {
     try {
         const userId = req.session.userId;
+        
+        if (!userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+        
         const result = await pool.query('SELECT role FROM members WHERE id = $1', [userId]);
         
         if (!result.rows[0] || !['admin', 'super_admin'].includes(result.rows[0].role)) {
@@ -15,7 +18,8 @@ const isAdmin = async (req, res, next) => {
         }
         next();
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Admin check error:', err);
+        res.status(500).json({ error: 'Authentication error: ' + err.message });
     }
 };
 
@@ -26,28 +30,45 @@ router.get('/members', isAdmin, async (req, res) => {
     try {
         const { role, status, search } = req.query;
         
-        let query = 'SELECT id, name, email, phone, role, status, member_type, created_at, (SELECT COUNT(*) FROM attendance WHERE member_id = members.id) as total_visits FROM members WHERE 1=1';
+        let query = `
+            SELECT 
+                id, 
+                name, 
+                email, 
+                phone, 
+                role, 
+                status, 
+                member_type, 
+                created_at,
+                (SELECT COUNT(*) FROM attendance WHERE member_id = members.id) as total_visits
+            FROM members 
+            WHERE 1=1
+        `;
         const params = [];
         
-        if (role) {
+        if (role && role !== '') {
             query += ' AND role = $' + (params.length + 1);
             params.push(role);
         }
-        if (status) {
+        
+        if (status && status !== '') {
             query += ' AND status = $' + (params.length + 1);
             params.push(status);
         }
-        if (search) {
-            query += ' AND (name ILIKE $' + (params.length + 1) + ' OR email ILIKE $' + (params.length + 1) + ' OR phone ILIKE $' + (params.length + 1) + ')';
-            params.push(`%${search}%`);
+        
+        if (search && search !== '') {
+            const searchParam = `%${search}%`;
+            query += ' AND (name ILIKE $' + (params.length + 1) + ' OR email ILIKE $' + (params.length + 2) + ' OR phone ILIKE $' + (params.length + 3) + ')';
+            params.push(searchParam, searchParam, searchParam);
         }
         
         query += ' ORDER BY created_at DESC';
         
         const result = await pool.query(query, params);
-        res.json(result.rows);
+        res.json(result.rows || []);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Get members error:', err);
+        res.status(500).json({ error: 'Failed to fetch members: ' + err.message });
     }
 });
 
@@ -66,7 +87,7 @@ router.get('/members/:id', isAdmin, async (req, res) => {
         
         // Get attendance history
         const attendance = await pool.query(
-            `SELECT * FROM attendance WHERE member_id = $1 ORDER BY check_in DESC`,
+            `SELECT * FROM attendance WHERE member_id = $1 ORDER BY check_in DESC LIMIT 100`,
             [memberId]
         );
         
@@ -78,7 +99,7 @@ router.get('/members/:id', isAdmin, async (req, res) => {
                 MAX(EXTRACT(EPOCH FROM (check_out - check_in))/60) as longest_duration_min,
                 MIN(EXTRACT(EPOCH FROM (check_out - check_in))/60) as shortest_duration_min,
                 MAX(check_in) as last_visit,
-                SUM(EXTRACT(EPOCH FROM (check_out - check_in))/3600) as total_hours
+                ROUND(SUM(EXTRACT(EPOCH FROM (check_out - check_in))/3600)::numeric, 2) as total_hours
             FROM attendance 
             WHERE member_id = $1 AND check_out IS NOT NULL`,
             [memberId]
@@ -86,11 +107,17 @@ router.get('/members/:id', isAdmin, async (req, res) => {
         
         res.json({
             member: member.rows[0],
-            attendance: attendance.rows,
-            stats: stats.rows[0]
+            attendance: attendance.rows || [],
+            stats: stats.rows[0] || {
+                total_visits: 0,
+                avg_duration_min: 0,
+                total_hours: 0,
+                last_visit: null
+            }
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Get member profile error:', err);
+        res.status(500).json({ error: 'Failed to fetch profile: ' + err.message });
     }
 });
 
@@ -99,7 +126,7 @@ router.get('/members/:id', isAdmin, async (req, res) => {
 // ============================================
 router.put('/members/:id', isAdmin, async (req, res) => {
     try {
-        const { name, email, phone, role, status, member_type, department } = req.body;
+        const { name, email, phone, role, status, member_type } = req.body;
         const memberId = req.params.id;
         
         const result = await pool.query(
@@ -115,16 +142,14 @@ router.put('/members/:id', isAdmin, async (req, res) => {
             [name, email, phone, role, status, member_type, memberId]
         );
         
-        // Log admin action
-        await pool.query(
-            `INSERT INTO admin_logs (admin_id, action, target_member_id, details) 
-             VALUES ($1, $2, $3, $4)`,
-            [req.session.userId, 'UPDATE_MEMBER', memberId, JSON.stringify(req.body)]
-        ).catch(() => {}); // Ignore if table doesn't exist
+        if (!result.rows.length) {
+            return res.status(404).json({ error: 'Member not found' });
+        }
         
         res.json(result.rows[0]);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Update member error:', err);
+        res.status(500).json({ error: 'Failed to update member: ' + err.message });
     }
 });
 
@@ -161,16 +186,10 @@ router.post('/members/:id/force-checkout', isAdmin, async (req, res) => {
             [checkOutTime, durationMinutes, sessionId]
         );
         
-        // Log admin action
-        await pool.query(
-            `INSERT INTO admin_logs (admin_id, action, target_member_id, details) 
-             VALUES ($1, $2, $3, $4)`,
-            [req.session.userId, 'FORCE_CHECKOUT', memberId, JSON.stringify({ sessionId, duration: durationMinutes })]
-        ).catch(() => {});
-        
         res.json({ success: true, data: result.rows[0] });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Force checkout error:', err);
+        res.status(500).json({ error: 'Failed to force checkout: ' + err.message });
     }
 });
 
@@ -187,16 +206,14 @@ router.delete('/members/:id', isAdmin, async (req, res) => {
             [memberId]
         );
         
-        // Log admin action
-        await pool.query(
-            `INSERT INTO admin_logs (admin_id, action, target_member_id, details) 
-             VALUES ($1, $2, $3, $4)`,
-            [req.session.userId, 'DELETE_MEMBER', memberId, JSON.stringify({ deleted_at: new Date() })]
-        ).catch(() => {});
+        if (!result.rows.length) {
+            return res.status(404).json({ error: 'Member not found' });
+        }
         
         res.json({ success: true, message: 'Member deleted' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Delete member error:', err);
+        res.status(500).json({ error: 'Failed to delete member: ' + err.message });
     }
 });
 
@@ -209,77 +226,15 @@ router.post('/members/:id/reset-face', isAdmin, async (req, res) => {
         
         await pool.query('DELETE FROM face_data WHERE member_id = $1', [memberId]).catch(() => {});
         
-        // Log admin action
-        await pool.query(
-            `INSERT INTO admin_logs (admin_id, action, target_member_id) 
-             VALUES ($1, $2, $3)`,
-            [req.session.userId, 'RESET_FACE', memberId]
-        ).catch(() => {});
-        
         res.json({ success: true, message: 'Face data reset' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Reset face error:', err);
+        res.status(500).json({ error: 'Failed to reset face: ' + err.message });
     }
 });
 
 // ============================================
-// 7. MANUAL ATTENDANCE ENTRY
-// ============================================
-router.post('/members/:id/manual-attendance', isAdmin, async (req, res) => {
-    try {
-        const { check_in, check_out } = req.body;
-        const memberId = req.params.id;
-        
-        const checkInTime = new Date(check_in);
-        const checkOutTime = new Date(check_out);
-        const durationMinutes = Math.floor((checkOutTime - checkInTime) / 60000);
-        
-        const result = await pool.query(
-            `INSERT INTO attendance (member_id, check_in, check_out, duration_minutes) 
-             VALUES ($1, $2, $3, $4)
-             RETURNING *`,
-            [memberId, checkInTime, checkOutTime, durationMinutes]
-        );
-        
-        // Log admin action
-        await pool.query(
-            `INSERT INTO admin_logs (admin_id, action, target_member_id, details) 
-             VALUES ($1, $2, $3, $4)`,
-            [req.session.userId, 'MANUAL_ATTENDANCE', memberId, JSON.stringify({ check_in, check_out })]
-        ).catch(() => {});
-        
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ============================================
-// 8. DELETE ATTENDANCE RECORD
-// ============================================
-router.delete('/attendance/:id', isAdmin, async (req, res) => {
-    try {
-        const attendanceId = req.params.id;
-        
-        const attendance = await pool.query('SELECT member_id FROM attendance WHERE id = $1', [attendanceId]);
-        
-        await pool.query('DELETE FROM attendance WHERE id = $1', [attendanceId]);
-        
-        // Log admin action
-        await pool.query(
-            `INSERT INTO admin_logs (admin_id, action, target_member_id, details) 
-             VALUES ($1, $2, $3, $4)`,
-            [req.session.userId, 'DELETE_ATTENDANCE', attendance.rows[0].member_id, JSON.stringify({ attendanceId })]
-        ).catch(() => {});
-        
-        res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ============================================
-// 9. EXPORT MEMBER REPORT (CSV)
+// 7. EXPORT MEMBER REPORT (CSV)
 // ============================================
 router.get('/members/:id/export/csv', isAdmin, async (req, res) => {
     try {
@@ -298,106 +253,76 @@ router.get('/members/:id/export/csv', isAdmin, async (req, res) => {
         );
         
         let csv = 'Member Attendance Report\n';
+        csv += `Generated,${new Date().toLocaleString()}\n\n`;
         csv += `Name,${member.rows[0].name}\n`;
-        csv += `Email,${member.rows[0].email}\n`;
+        csv += `Email,${member.rows[0].email || 'N/A'}\n`;
         csv += `Phone,${member.rows[0].phone || 'N/A'}\n`;
-        csv += `Role,${member.rows[0].role}\n\n`;
+        csv += `Role,${member.rows[0].role}\n`;
+        csv += `Status,${member.rows[0].status}\n\n`;
         
+        csv += 'Attendance History\n';
         csv += 'Check-In,Check-Out,Duration (minutes)\n';
         attendance.rows.forEach(row => {
-            csv += `${new Date(row.check_in).toLocaleString()},${row.check_out ? new Date(row.check_out).toLocaleString() : 'Ongoing'},${row.duration_minutes || 'N/A'}\n`;
+            const checkIn = new Date(row.check_in).toLocaleString();
+            const checkOut = row.check_out ? new Date(row.check_out).toLocaleString() : 'Ongoing';
+            csv += `"${checkIn}","${checkOut}",${row.duration_minutes || 'N/A'}\n`;
         });
         
         res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename="member_${memberId}_report.csv"`);
+        res.setHeader('Content-Disposition', `attachment; filename="member_${memberId}_${new Date().toISOString().split('T')[0]}.csv"`);
         res.send(csv);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Export CSV error:', err);
+        res.status(500).json({ error: 'Failed to export: ' + err.message });
     }
 });
 
 // ============================================
-// 10. EXPORT MEMBER REPORT (JSON for PDF)
-// ============================================
-router.get('/members/:id/export/pdf', isAdmin, async (req, res) => {
-    try {
-        const memberId = req.params.id;
-        
-        const member = await pool.query('SELECT * FROM members WHERE id = $1', [memberId]);
-        const attendance = await pool.query(
-            `SELECT check_in, check_out, duration_minutes FROM attendance 
-             WHERE member_id = $1 ORDER BY check_in DESC`,
-            [memberId]
-        );
-        
-        const stats = await pool.query(
-            `SELECT 
-                COUNT(*) as total_visits,
-                ROUND(AVG(EXTRACT(EPOCH FROM (check_out - check_in))/60)::numeric, 2) as avg_duration_min,
-                SUM(EXTRACT(EPOCH FROM (check_out - check_in))/3600) as total_hours
-            FROM attendance 
-            WHERE member_id = $1 AND check_out IS NOT NULL`,
-            [memberId]
-        );
-        
-        // Return data as JSON - frontend will handle PDF generation with jsPDF
-        res.json({
-            member: member.rows[0],
-            attendance: attendance.rows,
-            stats: stats.rows[0]
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ============================================
-// 11. GET DASHBOARD ANALYTICS
+// 8. GET DASHBOARD ANALYTICS
 // ============================================
 router.get('/analytics/dashboard', isAdmin, async (req, res) => {
     try {
         const today = new Date().toISOString().split('T')[0];
         
-        // Total members
-        const totalMembers = await pool.query('SELECT COUNT(*) FROM members WHERE status != \'deleted\'');
+        const totalMembers = await pool.query(
+            'SELECT COUNT(*) as count FROM members WHERE status != \'deleted\''
+        );
         
-        // Active today
         const activeToday = await pool.query(
             `SELECT COUNT(DISTINCT member_id) as count FROM attendance 
              WHERE DATE(check_in) = $1`,
             [today]
         );
         
-        // Currently inside
         const currentlyInside = await pool.query(
             `SELECT COUNT(DISTINCT member_id) as count FROM attendance 
              WHERE check_out IS NULL`
         );
         
-        // Average stay
         const avgStay = await pool.query(
             `SELECT ROUND(AVG(duration_minutes)::numeric, 2) as minutes FROM attendance 
              WHERE check_out IS NOT NULL`
         );
         
         res.json({
-            totalMembers: totalMembers.rows[0].count,
-            activeToday: activeToday.rows[0].count,
-            currentlyInside: currentlyInside.rows[0].count,
-            avgStayMinutes: avgStay.rows[0].minutes || 0
+            totalMembers: parseInt(totalMembers.rows[0].count) || 0,
+            activeToday: parseInt(activeToday.rows[0].count) || 0,
+            currentlyInside: parseInt(currentlyInside.rows[0].count) || 0,
+            avgStayMinutes: parseFloat(avgStay.rows[0].minutes) || 0
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Dashboard analytics error:', err);
+        res.status(500).json({ error: 'Failed to fetch analytics: ' + err.message });
     }
 });
 
 // ============================================
-// 12. GET HOURLY ARRIVAL/DEPARTURE DATA
+// 9. GET HOURLY DATA
 // ============================================
 router.get('/analytics/hourly', isAdmin, async (req, res) => {
     try {
         const arrivals = await pool.query(
-            `SELECT EXTRACT(HOUR FROM check_in) as hour, COUNT(*) as count 
+            `SELECT EXTRACT(HOUR FROM check_in)::int as hour, COUNT(*) as count 
              FROM attendance 
              WHERE check_in IS NOT NULL
              GROUP BY EXTRACT(HOUR FROM check_in)
@@ -405,7 +330,7 @@ router.get('/analytics/hourly', isAdmin, async (req, res) => {
         );
         
         const departures = await pool.query(
-            `SELECT EXTRACT(HOUR FROM check_out) as hour, COUNT(*) as count 
+            `SELECT EXTRACT(HOUR FROM check_out)::int as hour, COUNT(*) as count 
              FROM attendance 
              WHERE check_out IS NOT NULL
              GROUP BY EXTRACT(HOUR FROM check_out)
@@ -413,37 +338,39 @@ router.get('/analytics/hourly', isAdmin, async (req, res) => {
         );
         
         res.json({ 
-            arrivals: arrivals.rows.map(r => ({ hour: parseInt(r.hour) || 0, count: parseInt(r.count) })),
-            departures: departures.rows.map(r => ({ hour: parseInt(r.hour) || 0, count: parseInt(r.count) }))
+            arrivals: arrivals.rows || [],
+            departures: departures.rows || []
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Hourly analytics error:', err);
+        res.status(500).json({ error: 'Failed to fetch hourly data: ' + err.message });
     }
 });
 
 // ============================================
-// 13. GET DAILY VISITS DATA
+// 10. GET DAILY DATA
 // ============================================
 router.get('/analytics/daily', isAdmin, async (req, res) => {
     try {
-        const { days = 14 } = req.query;
+        const days = parseInt(req.query.days) || 14;
         
         const dailyVisits = await pool.query(
-            `SELECT DATE(check_in) as date, COUNT(*) as visits 
+            `SELECT DATE(check_in)::text as date, COUNT(*) as visits 
              FROM attendance 
-             WHERE check_in > NOW() - INTERVAL '${parseInt(days)} days'
+             WHERE check_in > NOW() - INTERVAL '${days} days'
              GROUP BY DATE(check_in)
              ORDER BY date DESC`
         );
         
-        res.json(dailyVisits.rows);
+        res.json(dailyVisits.rows || []);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Daily analytics error:', err);
+        res.status(500).json({ error: 'Failed to fetch daily data: ' + err.message });
     }
 });
 
 // ============================================
-// 14. TOTAL HOURS PER MEMBER
+// 11. GET HOURS PER MEMBER
 // ============================================
 router.get('/analytics/hours-per-member', isAdmin, async (req, res) => {
     try {
@@ -451,7 +378,7 @@ router.get('/analytics/hours-per-member', isAdmin, async (req, res) => {
             `SELECT 
                 m.id,
                 m.name,
-                COUNT(*) as total_visits,
+                COUNT(a.id) as total_visits,
                 ROUND(SUM(EXTRACT(EPOCH FROM (a.check_out - a.check_in))/3600)::numeric, 2) as total_hours,
                 ROUND(AVG(EXTRACT(EPOCH FROM (a.check_out - a.check_in))/60)::numeric, 2) as avg_duration_min,
                 MAX(a.check_in) as last_visit
@@ -462,9 +389,10 @@ router.get('/analytics/hours-per-member', isAdmin, async (req, res) => {
              ORDER BY total_hours DESC NULLS LAST`
         );
         
-        res.json(hoursPerMember.rows);
+        res.json(hoursPerMember.rows || []);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Hours per member error:', err);
+        res.status(500).json({ error: 'Failed to fetch hours data: ' + err.message });
     }
 });
 
