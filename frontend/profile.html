@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Profile</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .profile-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .profile-header {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        .profile-avatar {
+            width: 150px;
+            height: 150px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+        
+        .profile-info h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        .profile-info p {
+            margin: 8px 0;
+            color: #666;
+        }
+        
+        .profile-info strong {
+            display: inline-block;
+            min-width: 100px;
+            color: #333;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #764ba2;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 20px 0 15px 0;
+            color: #333;
+        }
+        
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .attendance-table thead {
+            background: #f8f9fa;
+        }
+        
+        .attendance-table th,
+        .attendance-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .attendance-table th {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .attendance-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Member Profile</h1>
+            <button class="btn btn-primary" onclick="goBack()">← Back</button>
+        </div>
+        
+        <div id="alert-container"></div>
+        
+        <div id="content" class="loading">
+            Loading profile...
+        </div>
+    </div>
+    
+    <!-- Manual Attendance Modal -->
+    <div class="modal" id="manual-modal">
+        <div class="modal-content">
+            <div class="modal-header">Add Manual Attendance</div>
+            <form onsubmit="addManualAttendance(event)">
+                <div class="form-group">
+                    <label>Check-In</label>
+                    <input type="datetime-local" id="manual-checkin" required>
+                </div>
+                <div class="form-group">
+                    <label>Check-Out</label>
+                    <input type="datetime-local" id="manual-checkout" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="closeManualModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let currentMemberId = null;
+        let attendanceChart = null;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            currentMemberId = params.get('id');
+            
+            if (!currentMemberId) {
+                showAlert('No member ID provided', 'error');
+                setTimeout(() => window.location.href = '/members.html', 2000);
+                return;
+            }
+            
+            loadProfile();
+        });
+        
+        async function loadProfile() {
+            try {
+                const response = await fetch(`/api/admin/members/${currentMemberId}`);
+                if (!response.ok) throw new Error('Member not found');
+                
+                const data = await response.json();
+                renderProfile(data);
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'error');
+            }
+        }
+        
+        function renderProfile(data) {
+            const { member, attendance, stats } = data;
+            
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="profile-section">
+                    <div class="profile-header">
+                        <div class="profile-avatar">${member.name.charAt(0).toUpperCase()}</div>
+                        <div class="profile-info">
+                            <h2>${member.name}</h2>
+                            <p><strong>Email:</strong> ${member.email}</p>
+                            <p><strong>Phone:</strong> ${member.phone || 'N/A'}</p>
+                            <p><strong>Role:</strong> ${member.role}</p>
+                            <p><strong>Type:</strong> ${member.member_type}</p>
+                            <p><strong>Status:</strong> ${member.status}</p>
+                            <p><strong>Joined:</strong> ${new Date(member.created_at).toLocaleDateString()}</p>
+                            
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-label">Total Visits</div>
+                                    <div class="stat-value">${stats.total_visits || 0}</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Total Hours</div>
+                                    <div class="stat-value">${(stats.total_hours || 0).toFixed(1)}</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Avg Duration</div>
+                                    <div class="stat-value">${(stats.avg_duration_min || 0).toFixed(0)} min</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Last Visit</div>
+                                    <div class="stat-value">${stats.last_visit ? new Date(stats.last_visit).toLocaleDateString() : 'N/A'}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="actions">
+                                <button class="btn btn-success" onclick="openManualModal()">➕ Add Attendance</button>
+                                <button class="btn btn-primary" onclick="exportReport('csv')">📥 Export CSV</button>
+                                <button class="btn btn-primary" onclick="exportReport('pdf')">📄 Export PDF</button>
+                                <button class="btn btn-danger" onclick="forceCheckout()">🚪 Force Checkout</button>
+                                <button class="btn btn-danger" onclick="resetFace()">🔄 Reset Face</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-section">
+                    <h3 class="section-title">📊 Attendance Timeline</h3>
+                    <div class="chart-container">
+                        <canvas id="attendance-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="profile-section">
+                    <h3 class="section-title">📋 Recent Attendance</h3>
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Check-In</th>
+                                <th>Check-Out</th>
+                                <th>Duration (min)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${attendance.slice(0, 10).map((a, i) => `
+                                <tr>
+                                    <td>${new Date(a.check_in).toLocaleString()}</td>
+                                    <td>${a.check_out ? new Date(a.check_out).toLocaleString() : 'Ongoing'}</td>
+                                    <td>${a.duration_minutes || 'N/A'}</td>
+                                    <td><button class="btn btn-danger" onclick="deleteAttendance(${a.id})" style="padding: 5px 10px; font-size: 12px;">Delete</button></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            renderAttendanceChart(attendance);
+        }
+        
+        function renderAttendanceChart(attendance) {
+            // Group by date
+            const dateMap = {};
+            attendance.forEach(a => {
+                const date = new Date(a.check_in).toLocaleDateString();
+                dateMap[date] = (dateMap[date] || 0) + 1;
+            });
+            
+            const dates = Object.keys(dateMap).reverse();
+            const counts = dates.map(d => dateMap[d]);
+            
+            const ctx = document.getElementById('attendance-chart').getContext('2d');
+            attendanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Visits per Day',
+                        data: counts,
+                        backgroundColor: '#667eea',
+                        borderColor: '#764ba2',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        async function forceCheckout() {
+            if (!confirm('Force checkout this member?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/members/${currentMemberId}/force-checkout`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) throw new Error('Failed to force checkout');
+                
+                showAlert('Checkout forced successfully!', 'success');
+                setTimeout(loadProfile, 1500);
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'error');
+            }
+        }
+        
+        async function resetFace() {
+            if (!confirm('Reset face data? They will need to register again.')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/members/${currentMemberId}/reset-face`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) throw new Error('Failed to reset face');
+                
+                showAlert('Face data reset!', 'success');
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'error');
+            }
+        }
+        
+        async function exportReport(format) {
+            try {
+                const url = `/api/admin/members/${currentMemberId}/export/${format}`;
+                window.location.href = url;
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'error');
+            }
+        }
+        
+        function openManualModal() {
+            document.getElementById('manual-modal').classList.add('show');
+        }
+        
+        function closeManualModal() {
+            document.getElementById('manual-modal').classList.remove('show');
+        }
+        
+        async function addManualAttendance(e) {
+            e.preventDefault();
+            
+            try {
+                const checkIn = document.getElementById('manual-checkin').value;
+                const checkOut = document.getElementById('manual-checkout').value;
+                
+                const response = await fetch(`/api/admin/members/${currentMemberId}/manual-attendance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ check_in: checkIn, check_out: checkOut })
+                });
+                
+                if (!response.ok) throw new Error('Failed to add attendance');
+                
+                showAlert('Attendance added!', 'success');
+                closeManualModal();
+                loadProfile();
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'error');
+            }
+        }
+        
+        async function deleteAttendance(attendanceId) {
+            if (!confirm('Delete this attendance record?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/attendance/${attendanceId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete');
+                
+                showAlert('Deleted!', 'success');
+                loadProfile();
+            } catch (err) {
+                showAlert('Error: ' + err.message, 'error');
+            }
+        }
+        
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            
+            setTimeout(() => alert.remove(), 5000);
+        }
+        
+        function goBack() {
+            window.location.href = '/members.html';
+        }
+    </script>
+</body>
+</html>
