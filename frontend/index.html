@@ -25,10 +25,36 @@
   </nav>
 
   <nav style="display: flex; gap: 15px; padding: 10px 0; margin: 10px 0; border-bottom: 1px solid #ddd;">
-    <a href="/" style="padding: 10px 20px; background: #667eea; color: white; border-radius: 5px; text-decoration: none;">🏠 Dashboard</a>
+    <button onclick="resetSystem()" style="padding: 10px 20px; background: #e74c3c; color: white; border-radius: 5px; border: none; cursor: pointer; font-size: 14px;">🔄 Reset</button>
     <a href="/members.html" style="padding: 10px 20px; background: #667eea; color: white; border-radius: 5px; text-decoration: none;">📋 Members</a>
     <a href="/reports.html" style="padding: 10px 20px; background: #667eea; color: white; border-radius: 5px; text-decoration: none;">📊 Analytics</a>
   </nav>
+
+  <script>
+    // Wipes every member and every attendance record so the system starts
+    // fresh. Requires the admin password - cannot be undone.
+    async function resetSystem() {
+      if (!confirm('This will permanently delete ALL members and ALL attendance history. This cannot be undone. Continue?')) return;
+
+      const password = prompt('Enter admin password to confirm reset:');
+      if (!password) return;
+
+      try {
+        const response = await fetch('/api/admin/reset', {
+          method: 'POST',
+          headers: { 'x-admin-password': password }
+        });
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.error || 'Reset failed');
+
+        alert('System reset successfully. Reloading...');
+        window.location.reload();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+  </script>
 
   <div class="container">
 
