@@ -1,26 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db'); // Use your existing db connection
+const { pool } = require('../db'); // Use your existing db connection
+const config = require('../config');
 
-// Middleware: Check if user is admin
-const isAdmin = async (req, res, next) => {
-    try {
-        const userId = req.session.userId;
-        
-        if (!userId) {
-            return res.status(401).json({ error: 'Not authenticated' });
-        }
-        
-        const result = await pool.query('SELECT role FROM members WHERE id = $1', [userId]);
-        
-        if (!result.rows[0] || !['admin', 'super_admin'].includes(result.rows[0].role)) {
-            return res.status(403).json({ error: 'Admin access required' });
-        }
-        next();
-    } catch (err) {
-        console.error('Admin check error:', err);
-        res.status(500).json({ error: 'Authentication error: ' + err.message });
+// Middleware: Check the request carries the correct admin password.
+// The dashboard sends it as the 'x-admin-password' header on every request.
+const isAdmin = (req, res, next) => {
+    const suppliedPassword = req.headers['x-admin-password'];
+
+    if (!suppliedPassword || suppliedPassword !== config.ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Not authenticated' });
     }
+    next();
 };
 
 // ============================================
