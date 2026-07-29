@@ -35,10 +35,7 @@
             flex-wrap: wrap;
             border-bottom: 1px solid #eee;
         }
-        .search-box {
-            flex: 1;
-            min-width: 200px;
-        }
+        .search-box { flex: 1; min-width: 200px; }
         .search-box input {
             width: 100%;
             padding: 10px 15px;
@@ -65,128 +62,28 @@
             font-size: 14px;
         }
         .btn:hover { background: #764ba2; }
-        .btn-danger {
-            background: #e74c3c;
-        }
+        .btn-danger { background: #e74c3c; }
         .btn-danger:hover { background: #c0392b; }
-        .btn-success {
-            background: #27ae60;
-        }
-        .btn-success:hover { background: #229954; }
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        thead {
-            background: #f8f9fa;
-            border-bottom: 2px solid #ddd;
-        }
-        th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #333;
-            font-size: 14px;
-        }
-        td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
-        }
+        .btn-small { padding: 6px 12px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #f8f9fa; border-bottom: 2px solid #ddd; }
+        th { padding: 15px; text-align: left; font-weight: 600; color: #333; font-size: 14px; }
+        td { padding: 12px 15px; border-bottom: 1px solid #eee; font-size: 14px; }
         tr:hover { background: #f8f9fa; }
-        .status-badge {
+        .role-badge {
             display: inline-block;
             padding: 5px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
+            background: #e2e3ff;
+            color: #444fd1;
+            text-transform: capitalize;
         }
-        .status-active {
-            background: #d4edda;
-            color: #155724;
-        }
-        .status-inactive {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .status-deleted {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-        .actions {
-            display: flex;
-            gap: 5px;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal.show { display: flex; }
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            max-width: 400px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-        .modal-footer {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        .alert {
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
+        .actions { display: flex; gap: 5px; }
+        .alert { padding: 15px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -194,48 +91,27 @@
             padding: 20px 30px;
             background: #f8f9fa;
         }
-        .stat-card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        .stat-label {
-            font-size: 12px;
-            color: #999;
-            margin-bottom: 5px;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: 600;
-            color: #333;
-        }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-        .table-wrapper {
-            overflow-x: auto;
-        }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea; }
+        .stat-label { font-size: 12px; color: #999; margin-bottom: 5px; }
+        .stat-value { font-size: 24px; font-weight: 600; color: #333; }
+        .loading { text-align: center; padding: 40px; color: #999; }
+        .table-wrapper { overflow-x: auto; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>📋 Members Management</h1>
-            <button class="btn" onclick="goToDashboard()">← Dashboard</button>
+            <button class="btn" onclick="goToDashboard()" style="background:white;color:#667eea;">← Dashboard</button>
         </div>
-        
-        <div id="alert-container"></div>
-        
+
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-label">Total Members</div>
                 <div class="stat-value" id="stat-total">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Active Members</div>
+                <div class="stat-label">Have Visited</div>
                 <div class="stat-value" id="stat-active">0</div>
             </div>
             <div class="stat-card">
@@ -243,35 +119,33 @@
                 <div class="stat-value" id="stat-guests">0</div>
             </div>
         </div>
-        
+
+        <div id="alert-container" style="padding: 0 30px;"></div>
+
         <div class="controls">
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="Search name, email, phone...">
+                <input type="text" id="search-input" placeholder="Search name or Build Club ID...">
             </div>
             <select id="role-filter">
                 <option value="">All Roles</option>
-                <option value="member">Member</option>
                 <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
+                <option value="mentor">Mentor</option>
+                <option value="member">Member</option>
+                <option value="guest">Guest</option>
             </select>
-            <select id="status-filter">
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
-            <button class="btn btn-success" onclick="exportAllMembers()">📥 Export CSV</button>
+            <button class="btn" onclick="exportAllMembers()">⬇️ Export CSV</button>
         </div>
-        
+
         <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
+                        <th>Build Club ID</th>
                         <th>Role</th>
-                        <th>Status</th>
+                        <th>Registered</th>
                         <th>Visits</th>
+                        <th>Total Hours</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -281,50 +155,10 @@
             </table>
         </div>
     </div>
-    
-    <!-- Edit Member Modal -->
-    <div class="modal" id="edit-modal">
-        <div class="modal-content">
-            <div class="modal-header">Edit Member</div>
-            <form id="edit-form" onsubmit="saveEditMember(event)">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="edit-name" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="edit-email" required>
-                </div>
-                <div class="form-group">
-                    <label>Phone</label>
-                    <input type="text" id="edit-phone">
-                </div>
-                <div class="form-group">
-                    <label>Role</label>
-                    <select id="edit-role" required>
-                        <option value="member">Member</option>
-                        <option value="admin">Admin</option>
-                        <option value="manager">Manager</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Status</label>
-                    <select id="edit-status" required>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn" onclick="closeEditModal()">Cancel</button>
-                    <button type="submit" class="btn btn-success">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <script>
-        let currentMemberId = null;
         const ADMIN_PASSWORD_KEY = 'buildclub_admin_password';
+        let allMembers = [];
 
         function getAdminPassword() {
             let pass = sessionStorage.getItem(ADMIN_PASSWORD_KEY);
@@ -341,177 +175,120 @@
             if (response.status === 401) sessionStorage.removeItem(ADMIN_PASSWORD_KEY);
             return response;
         }
-        
+
         document.addEventListener('DOMContentLoaded', () => {
             loadMembers();
-            document.getElementById('search-input').addEventListener('input', loadMembers);
-            document.getElementById('role-filter').addEventListener('change', loadMembers);
-            document.getElementById('status-filter').addEventListener('change', loadMembers);
+            document.getElementById('search-input').addEventListener('input', renderFromFilters);
+            document.getElementById('role-filter').addEventListener('change', renderFromFilters);
         });
-        
+
         async function loadMembers() {
             try {
-                const search = document.getElementById('search-input').value;
-                const role = document.getElementById('role-filter').value;
-                const status = document.getElementById('status-filter').value;
-                
-                let url = '/api/admin/members?';
-                if (search) url += `search=${encodeURIComponent(search)}&`;
-                if (role) url += `role=${role}&`;
-                if (status) url += `status=${status}&`;
-                
-                const response = await adminFetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-                
-                const members = await response.json();
-                
-                // Check if response is an array
-                if (!Array.isArray(members)) {
-                    throw new Error('Invalid response format');
-                }
-                
-                renderMembers(members);
-                updateStats(members);
+                const [membersRes, summaryRes] = await Promise.all([
+                    fetch('/api/members'),
+                    fetch('/api/attendance/summary')
+                ]);
+
+                if (!membersRes.ok) throw new Error(`Server error: ${membersRes.status}`);
+
+                const members = await membersRes.json();
+                const summary = summaryRes.ok ? await summaryRes.json() : [];
+
+                const summaryById = {};
+                summary.forEach(s => { summaryById[s.buildClubId] = s; });
+
+                allMembers = members.map(m => ({
+                    ...m,
+                    visits: summaryById[m.buildClubId]?.visits || 0,
+                    totalHours: summaryById[m.buildClubId]?.totalHours || 0
+                }));
+
+                renderFromFilters();
             } catch (err) {
                 showAlert('Error loading members: ' + err.message, 'error');
-                document.getElementById('members-table').innerHTML = 
+                document.getElementById('members-table').innerHTML =
                     `<tr><td colspan="7" class="loading" style="color:red;">Error: ${err.message}</td></tr>`;
             }
         }
-        
+
+        function renderFromFilters() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const role = document.getElementById('role-filter').value;
+
+            let filtered = allMembers;
+            if (role) filtered = filtered.filter(m => m.role === role);
+            if (search) {
+                filtered = filtered.filter(m =>
+                    (m.name || '').toLowerCase().includes(search) ||
+                    (m.buildClubId || '').toLowerCase().includes(search)
+                );
+            }
+
+            renderMembers(filtered);
+            updateStats(allMembers);
+        }
+
         function renderMembers(members) {
             const tbody = document.getElementById('members-table');
-            
+
             if (!members || members.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="loading">No members found</td></tr>';
                 return;
             }
-            
+
             tbody.innerHTML = members.map(member => `
                 <tr>
                     <td><strong>${member.name || '-'}</strong></td>
-                    <td>${member.email || '-'}</td>
-                    <td>${member.phone || '-'}</td>
-                    <td>${member.role || 'member'}</td>
-                    <td>
-                        <span class="status-badge status-${member.status || 'active'}">
-                            ${member.status || 'active'}
-                        </span>
-                    </td>
-                    <td>${member.total_visits || 0}</td>
+                    <td>${member.buildClubId || '-'}</td>
+                    <td><span class="role-badge">${member.role || 'member'}</span></td>
+                    <td>${member.createdAt ? new Date(member.createdAt).toLocaleDateString() : '-'}</td>
+                    <td>${member.visits || 0}</td>
+                    <td>${(member.totalHours || 0).toFixed(1)} hrs</td>
                     <td>
                         <div class="actions">
-                            <button class="btn btn-small" onclick="viewProfile(${member.id})">View</button>
-                            <button class="btn btn-small" onclick="editMember(${member.id})">Edit</button>
-                            <button class="btn btn-small btn-danger" onclick="deleteMember(${member.id})">Delete</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteMember('${member.buildClubId}', '${(member.name || '').replace(/'/g, "\\'")}')">Delete</button>
                         </div>
                     </td>
                 </tr>
             `).join('');
         }
-        
+
         function updateStats(members) {
-            if (!Array.isArray(members)) return;
-            
             const total = members.length;
-            const active = members.filter(m => m.status === 'active').length;
-            const guests = members.filter(m => m.member_type === 'guest').length;
-            
+            const active = members.filter(m => (m.visits || 0) > 0).length;
+            const guests = members.filter(m => m.role === 'guest').length;
+
             document.getElementById('stat-total').textContent = total;
             document.getElementById('stat-active').textContent = active;
             document.getElementById('stat-guests').textContent = guests;
         }
-        
-        async function editMember(memberId) {
+
+        async function deleteMember(buildClubId, name) {
+            if (!confirm(`Delete ${name} (${buildClubId})? This permanently removes them and their attendance history. This cannot be undone.`)) return;
+
             try {
-                const response = await adminFetch(`/api/admin/members/${memberId}`);
-                if (!response.ok) throw new Error('Failed to load member');
-                
-                const data = await response.json();
-                const member = data.member;
-                
-                currentMemberId = memberId;
-                document.getElementById('edit-name').value = member.name || '';
-                document.getElementById('edit-email').value = member.email || '';
-                document.getElementById('edit-phone').value = member.phone || '';
-                document.getElementById('edit-role').value = member.role || 'member';
-                document.getElementById('edit-status').value = member.status || 'active';
-                document.getElementById('edit-modal').classList.add('show');
-            } catch (err) {
-                showAlert('Error: ' + err.message, 'error');
-            }
-        }
-        
-        async function saveEditMember(e) {
-            e.preventDefault();
-            
-            try {
-                const updateData = {
-                    name: document.getElementById('edit-name').value,
-                    email: document.getElementById('edit-email').value,
-                    phone: document.getElementById('edit-phone').value,
-                    role: document.getElementById('edit-role').value,
-                    status: document.getElementById('edit-status').value
-                };
-                
-                const response = await adminFetch(`/api/admin/members/${currentMemberId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updateData)
-                });
-                
-                if (!response.ok) throw new Error('Failed to update');
-                
-                showAlert('Member updated successfully!', 'success');
-                closeEditModal();
-                loadMembers();
-            } catch (err) {
-                showAlert('Error: ' + err.message, 'error');
-            }
-        }
-        
-        function closeEditModal() {
-            document.getElementById('edit-modal').classList.remove('show');
-        }
-        
-        async function deleteMember(memberId) {
-            if (!confirm('Are you sure? This will delete the member.')) return;
-            
-            try {
-                const response = await adminFetch(`/api/admin/members/${memberId}`, {
+                const response = await adminFetch(`/api/members/${encodeURIComponent(buildClubId)}`, {
                     method: 'DELETE'
                 });
-                
-                if (!response.ok) throw new Error('Failed to delete');
-                
-                showAlert('Member deleted successfully!', 'success');
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Failed to delete');
+
+                showAlert(`${name} was deleted.`, 'success');
                 loadMembers();
             } catch (err) {
                 showAlert('Error: ' + err.message, 'error');
             }
         }
-        
-        function viewProfile(memberId) {
-            window.location.href = `/profile.html?id=${memberId}`;
-        }
-        
-        async function exportAllMembers() {
+
+        function exportAllMembers() {
             try {
-                const response = await adminFetch('/api/admin/members');
-                if (!response.ok) throw new Error('Failed to export');
-                
-                const members = await response.json();
-                
-                if (!Array.isArray(members)) throw new Error('Invalid data format');
-                
-                let csv = 'Name,Email,Phone,Role,Status,Total Visits\n';
-                members.forEach(m => {
-                    csv += `"${m.name || ''}","${m.email || ''}","${m.phone || ''}","${m.role || 'member'}","${m.status || 'active'}",${m.total_visits || 0}\n`;
+                let csv = 'Name,Build Club ID,Role,Registered,Visits,Total Hours\n';
+                allMembers.forEach(m => {
+                    const registered = m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '';
+                    csv += `"${m.name || ''}","${m.buildClubId || ''}","${m.role || 'member'}","${registered}",${m.visits || 0},${(m.totalHours || 0).toFixed(2)}\n`;
                 });
-                
+
                 const blob = new Blob([csv], { type: 'text/csv' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -523,19 +300,18 @@
                 showAlert('Error: ' + err.message, 'error');
             }
         }
-        
+
         function showAlert(message, type) {
             const container = document.getElementById('alert-container');
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
             alert.textContent = message;
             container.appendChild(alert);
-            
             setTimeout(() => alert.remove(), 5000);
         }
-        
+
         function goToDashboard() {
-            window.location.href = '/';
+            window.location.href = '/dashboard.html';
         }
     </script>
 </body>
