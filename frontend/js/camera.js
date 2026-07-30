@@ -1,14 +1,20 @@
 let currentStream = null;
 let isRecognizing = false;
 let modelsLoaded = false;
+let faceMatcher = null;
+let memberLookup = {}; // buildClubId -> name
 let lastMatchTime = 0;
-const MATCH_COOLDOWN_MS = 2000; // don't hammer the backend every single frame
+const MATCH_COOLDOWN_MS = 3000;  // don't hammer the backend every single frame
+const MATCH_THRESHOLD = 0.6;     // lower = stricter match (face-api default)
+const REFRESH_FACES_MS = 60000;  // pick up newly-registered members without a reload
 
 // Initialize camera + models as soon as this page loads - no button needed.
 document.addEventListener('DOMContentLoaded', async function() {
     await loadModels();
+    await loadKnownFaces();
     await initCamera();
     startFaceRecognition();
+    setInterval(loadKnownFaces, REFRESH_FACES_MS);
 });
 
 // Stop camera when leaving the page
@@ -37,6 +43,36 @@ async function loadModels() {
     } catch (err) {
         console.error('❌ Failed to load face-api models:', err);
         alert('Failed to load face recognition models. Check your connection and reload.');
+    }
+}
+
+// Fetches every registered member's stored face descriptors and builds a
+// matcher so we can figure out WHOSE face the camera is looking at.
+async function loadKnownFaces() {
+    try {
+        const res = await fetch('/api/members');
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const members = await res.json();
+
+        const labeledDescriptors = members
+            .filter(m => Array.isArray(m.descriptors) && m.descriptors.length > 0)
+            .map(m => new faceapi.LabeledFaceDescriptors(
+                m.buildClubId,
+                m.descriptors.map(d => new Float32Array(d))
+            ));
+
+        memberLookup = {};
+        members.forEach(m => { memberLookup[m.buildClubId] = m.name; });
+
+        if (labeledDescriptors.length > 0) {
+            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, MATCH_THRESHOLD);
+            console.log(`✅ Loaded ${labeledDescriptors.length} registered face${labeledDescriptors.length === 1 ? '' : 's'}`);
+        } else {
+            faceMatcher = null;
+            console.warn('⚠️ No registered members with face data yet - register someone first.');
+        }
+    } catch (err) {
+        console.error('❌ Failed to load known faces:', err);
     }
 }
 
@@ -97,14 +133,18 @@ async function startFaceRecognition() {
                     .withFaceLandmarks()
                     .withFaceDescriptors();
                 
-                if (detections.length > 0 && Date.now() - lastMatchTime > MATCH_COOLDOWN_MS) {
-                    lastMatchTime = Date.now();
-                    detections.forEach((detection, idx) => {
+                if (detections.length > 0 && faceMatcher && Date.now() - lastMatchTime > MATCH_COOLDOWN_MS) {
+                    detections.forEach((detection) => {
+                        const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
                         const confidence = (detection.detection.score * 100).toFixed(1);
-                        console.log(`Face ${idx + 1} detected: ${confidence}% confidence`);
-                        
-                        // Send to backend for matching
-                        matchFace(detection.descriptor);
+
+                        if (bestMatch.label !== 'unknown') {
+                            console.log(`Recognized ${bestMatch.label} (${confidence}% face confidence, distance ${bestMatch.distance.toFixed(2)})`);
+                            lastMatchTime = Date.now();
+                            markAttendance(bestMatch.label);
+                        } else {
+                            console.log(`Face detected (${confidence}% confidence) but not recognized - not registered yet?`);
+                        }
                     });
                 }
             } catch (err) {
@@ -118,18 +158,22 @@ async function startFaceRecognition() {
     detectAndMatch();
 }
 
-async function matchFace(descriptor) {
+async function markAttendance(buildClubId) {
+    const name = memberLookup[buildClubId] || buildClubId;
     try {
-        const response = await fetch('/api/attendance/checkin-by-face', {
+        const response = await fetch('/api/attendance/mark', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ descriptor })
+            body: JSON.stringify({ buildClubId, name })
         });
         
+        const data = await response.json();
+
         if (response.ok) {
-            const data = await response.json();
-            console.log('✅ Recognized:', data.name);
-            showNotification(`✅ ${data.name} checked in!`);
+            console.log(`✅ ${data.status}:`, data.message);
+            showNotification(data.message);
+        } else {
+            console.error('Attendance mark error:', data.error);
         }
     } catch (err) {
         console.error('Match error:', err);
