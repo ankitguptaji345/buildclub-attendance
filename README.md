@@ -172,7 +172,7 @@ buildclub-attendance/
 
 <div align="center">
 
-**[➡️ CLICK HERE TO ADD VIDEO DEMO](https://youtu.be/ZwZii33tusM)**
+**[➡️ CLICK HERE TO OPEN VIDEO DEMO](https://youtu.be/ZwZii33tusM)**
 
 </div>
 
