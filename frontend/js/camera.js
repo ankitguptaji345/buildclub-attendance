@@ -1,8 +1,12 @@
 let currentStream = null;
 let isRecognizing = false;
+let modelsLoaded = false;
+let lastMatchTime = 0;
+const MATCH_COOLDOWN_MS = 2000; // don't hammer the backend every single frame
 
-// Initialize camera on page load
+// Initialize camera + models as soon as this page loads - no button needed.
 document.addEventListener('DOMContentLoaded', async function() {
+    await loadModels();
     await initCamera();
     startFaceRecognition();
 });
@@ -19,6 +23,22 @@ document.addEventListener('visibilitychange', function() {
 document.querySelectorAll('a[href], button[onclick*="location"]').forEach(el => {
     el.addEventListener('click', stopCamera);
 });
+
+// The face-api models must be loaded before ANY detection call, or every
+// detectAllFaces() call throws immediately.
+async function loadModels() {
+    try {
+        const MODEL_URL = 'models';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        modelsLoaded = true;
+        console.log('✅ Face-api models loaded');
+    } catch (err) {
+        console.error('❌ Failed to load face-api models:', err);
+        alert('Failed to load face recognition models. Check your connection and reload.');
+    }
+}
 
 async function initCamera() {
     try {
@@ -39,6 +59,8 @@ async function initCamera() {
 }
 
 function stopCamera() {
+    isRecognizing = false;
+
     if (currentStream) {
         currentStream.getTracks().forEach(track => {
             track.stop();
@@ -54,12 +76,13 @@ function stopCamera() {
 }
 
 async function startFaceRecognition() {
-    if (!currentStream) return;
+    if (!currentStream || !modelsLoaded) return;
     
     isRecognizing = true;
     const video = document.getElementById('video');
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+    const detectorOptions = new faceapi.TinyFaceDetectorOptions();
     
     const detectAndMatch = async () => {
         if (!isRecognizing || !currentStream) return;
@@ -70,13 +93,13 @@ async function startFaceRecognition() {
             ctx.drawImage(video, 0, 0);
             
             try {
-                const detections = await faceapi.detectAllFaces(canvas)
+                const detections = await faceapi.detectAllFaces(canvas, detectorOptions)
                     .withFaceLandmarks()
                     .withFaceDescriptors();
                 
-                if (detections.length > 0) {
+                if (detections.length > 0 && Date.now() - lastMatchTime > MATCH_COOLDOWN_MS) {
+                    lastMatchTime = Date.now();
                     detections.forEach((detection, idx) => {
-                        const box = detection.detection.box;
                         const confidence = (detection.detection.score * 100).toFixed(1);
                         console.log(`Face ${idx + 1} detected: ${confidence}% confidence`);
                         
