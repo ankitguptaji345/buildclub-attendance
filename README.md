@@ -276,7 +276,7 @@ pm2 startup
 | Frontend & UI/UX | Backend & Database |
 | Face Registration Flow | API Architecture |
 | Dashboard Design | Recognition Engine |
-| GitHub: [@ShreyaDeb2006](https://github.com/ShreyaDeb2006) | GitHub: [@ankitguptaji345](https://github.com/ankitguptaji345) |
+| GitHub: [@ankitguptaji345](https://github.com/ankitguptaji345) | GitHub: [@ShreyaDeb2006](https://github.com/ShreyaDeb2006)
 
 </div>
 
