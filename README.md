@@ -168,15 +168,15 @@ buildclub-attendance/
 ## 🎬 Demo & Documentation
 
 ### 📹 **Project Video**
-*(Add your demo video link here)*
+
 
 <div align="center">
 
-**[➡️ CLICK HERE TO OPEN VIDEO DEMO](https://youtu.be/ZwZii33tusM)**
+**[➡️ CLICK HERE TO OPEN DEMO VIDEO](https://youtu.be/ZwZii33tusM)**
 
 </div>
 
-> Coming soon! Replace the link above with your YouTube or Loom video showcasing:
+> Watch the complete walkthrough demonstrating member registration, real-time face recognition, attendance tracking, analytics dashboard, and engagement badges.
 > - Live face registration
 > - Real-time check-in/out
 > - Dashboard analytics
@@ -197,7 +197,7 @@ Edit `backend/config.js` to customize:
 
 ```javascript
 // Admin password for registration
-ADMIN_PASSWORD: "change-me-123"
+ADMIN_PASSWORD: <"change-me-123">
 
 // Auto-checkout timeout (hours)
 AUTO_LOGOUT_HOURS: 12
@@ -217,9 +217,9 @@ Create a `.env` file in the `backend/` directory:
 
 ```env
 # Database
-DATABASE_URL=postgres://user:password@localhost:5432/buildclub
-DB_HOST=localhost
-DB_PORT=5432
+DATABASE_URL=<postgres://user:password@localhost:5432/buildclub>
+DB_HOST=<localhost>
+DB_PORT=<5432>
 DB_USER=<postgres>
 DB_PASSWORD=<your_password>
 DB_NAME=buildclub
@@ -319,12 +319,6 @@ pm2 startup
 
 ---
 
-## 📄 License
-
-This project is licensed under the **MIT License** - see the LICENSE file for details.
-
----
-
 ## 🤝 Contributing
 
 We welcome contributions! Here's how:
@@ -365,7 +359,7 @@ Built with ❤️ for makers and communities
 
 <div align="center">
 
-**Made for the [Build FOR BUILDClub Vision Challenge]** 🏆
+**Made for the [Build For BuildClub Vision Challenge]** 🏆
 
 ⭐ If you find this project helpful, please consider giving it a star! ⭐
 
