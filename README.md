@@ -271,7 +271,7 @@ pm2 startup
 
 <div align="center">
 
-| **Shreya Deb** | **Ankit Gupta** |
+| **Ankit Gupta** | **Shreya Deb** |
 |:-:|:-:|
 | Frontend & UI/UX | Backend & Database |
 | Face Registration Flow | API Architecture |
