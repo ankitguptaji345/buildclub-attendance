@@ -19,10 +19,12 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 const attendanceRoutes = require('./routes/attendance');
 const membersRoutes = require('./routes/members');
 const adminRoutes = require('./routes/admin');
+const authRoutes = require('./routes/auth');
 
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/members', membersRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
 
 // Serve HTML files (must come AFTER static middleware)
 app.get('/members.html', (req, res) => {
